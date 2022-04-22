@@ -5,5 +5,5 @@ int main()
 {
 	mirism::Atomic<int> a(0);
 	a = 3;
-	std::cout << a() << std::endl;
+	std::cout << a.read() << std::endl;
 }
