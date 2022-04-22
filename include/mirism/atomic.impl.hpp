@@ -23,6 +23,7 @@ namespace mirism
 				return *this;
 			std::lock_guard<std::mutex> lock(Mutex_);
 			Value_ = other();
+			return *this;
 		}
 	template <typename T> inline
 		Atomic<T>&
@@ -31,6 +32,7 @@ namespace mirism
 		{
 			std::lock_guard<std::mutex> lock(Mutex_);
 			Value_ = value;
+			return *this;
 		}
 	
 	template <typename T> inline
