@@ -1,13 +1,11 @@
+add_executable(test_common common.cpp)
+target_link_libraries(test_common libmirism)
+add_test(common test_common)
+
 add_executable(test_atomic atomic.cpp)
 target_link_libraries(test_atomic libmirism)
-set_property(TARGET test_atomic PROPERTY CXX_STANDARD 23)
-set_property(TARGET test_atomic PROPERTY CXX_STANDARD_REQUIRED ON)
-set_property(TARGET test_atomic PROPERTY CXX_EXTENSIONS OFF)
 add_test(atomic test_atomic)
 
 add_executable(test_pipe pipe.cpp)
 target_link_libraries(test_pipe libmirism)
-set_property(TARGET test_pipe PROPERTY CXX_STANDARD 23)
-set_property(TARGET test_pipe PROPERTY CXX_STANDARD_REQUIRED ON)
-set_property(TARGET test_pipe PROPERTY CXX_EXTENSIONS OFF)
 add_test(pipe test_pipe)

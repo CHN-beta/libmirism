@@ -1,11 +1,15 @@
 cmake_minimum_required(VERSION 3.14)
 project(libmirism)
 enable_testing()
+include(GNUInstallDirs)
+
+find_package(fmt REQUIRED)
+find_path(NAMEOF_INCLUDE_DIR nameof.hpp REQUIRED)
+find_package(Boost REQUIRED COMPONENTS container)
 
 add_library(libmirism INTERFACE)
-target_include_directories(libmirism INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include)
-set_property(TARGET libmirism PROPERTY CXX_STANDARD 23)
-set_property(TARGET libmirism PROPERTY CXX_STANDARD_REQUIRED ON)
-set_property(TARGET libmirism PROPERTY CXX_EXTENSIONS OFF)
+target_include_directories(libmirism INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include NAMEOF_INCLUDE_DIR)
+target_link_libraries(libmirism INTERFACE fmt::fmt Boost::container)
+target_compile_features(libmirism INTERFACE cxx_std_23)
 
 add_subdirectory(test)

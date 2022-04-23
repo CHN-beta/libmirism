@@ -1,3 +1,4 @@
+# include <mirism/common.impl.hpp>
 # include <mirism/atomic.impl.hpp>
 # include <iostream>
 
