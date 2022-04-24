@@ -8,7 +8,7 @@ find_path(NAMEOF_INCLUDE_DIR nameof.hpp REQUIRED)
 find_package(Boost REQUIRED COMPONENTS container)
 
 add_library(libmirism INTERFACE)
-target_include_directories(libmirism INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include NAMEOF_INCLUDE_DIR)
+target_include_directories(libmirism INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include ${NAMEOF_INCLUDE_DIR})
 target_link_libraries(libmirism INTERFACE fmt::fmt Boost::container)
 target_compile_features(libmirism INTERFACE cxx_std_23)
 
