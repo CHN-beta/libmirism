@@ -9,3 +9,7 @@ add_test(atomic test_atomic)
 add_executable(test_pipe pipe.cpp)
 target_link_libraries(test_pipe libmirism)
 add_test(pipe test_pipe)
+
+add_executable(test_logger logger.cpp)
+target_link_libraries(test_logger libmirism)
+add_test(logger test_logger)
