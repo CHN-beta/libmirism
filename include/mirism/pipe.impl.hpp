@@ -8,42 +8,35 @@ namespace mirism
 		{return std::shared_ptr<Pipe>(new Pipe);}
 	inline Pipe::PushResult Pipe::push(std::variant<std::string, Signal> value)
 	{
-		auto result = Queue_.write
-		(
-			[&value](auto& queue){queue.push(std::move(value));},
-			[](const auto& queue){return queue.size() < 1024;},
-			10s
-		);
-		if (result == decltype(Queue_)::WaitResult::Success)
+		auto&& lock = Queue_.lock([](auto& queue){return queue.size() < 1024;}, 10s);
+		if (lock)
+		{
+			lock.value()->push(std::move(value));
 			return PushResult::Success;
+		}
 		else
 			return PushResult::Failure;
 	}
 	inline std::optional<std::variant<std::string, Pipe::Signal>> Pipe::pop()
 	{
-		auto result = Queue_.write
-		(
-			[](auto& queue)
-			{
-				auto value = std::move(queue.front());
-				queue.pop();
-				return value;
-			},
-			[](const auto& queue){return !queue.empty();},
-			10s
-		);
-		return result;
+		auto&& lock = Queue_.lock([](auto& queue){return !queue.empty();}, 10s);
+		if (lock)
+		{
+			auto value = std::move(lock.value()->front());
+			lock.value()->pop();
+			return value;
+		}
+		else
+			return std::nullopt;
 	}
 	inline std::optional<std::variant<std::string, Pipe::Signal>> Pipe::front() const
 	{
-		auto result = Queue_.read
-		(
-			[](const auto& queue){return queue.front();},
-			[](const auto& queue){return !queue.empty();},
-			10s
-		);
-		return result;
+		auto&& lock = Queue_.lock([](auto& queue){return !queue.empty();}, 10s);
+		if (lock)
+			return lock.value()->front();
+		else
+			return std::nullopt;
 	}
 	inline bool Pipe::empty() const
-		{return Queue_.read([](const auto& queue){return queue.empty();});}
+		{return Queue_.lock()->empty();}
 }

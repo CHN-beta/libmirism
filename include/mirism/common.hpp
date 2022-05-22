@@ -1,6 +1,7 @@
 # pragma once
 
 # include <mutex>
+# include <shared_mutex>
 # include <condition_variable>
 # include <functional>
 # include <optional>

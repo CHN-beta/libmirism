@@ -4,90 +4,228 @@
 
 namespace mirism
 {
-	template <typename T> inline Atomic<T>::Atomic(const T& value)
+	template <not_cvref_type T> inline Atomic<T>::Atomic(const T& value)
 		: Value_(value) {}
-	template <typename T> inline Atomic<T>::Atomic(const Atomic& other)
-		: Value_(other()) {}
-	template <typename T> inline Atomic<T>& Atomic<T>::operator=(const Atomic& other)
+	template <not_cvref_type T> inline Atomic<T>::Atomic(T&& value)
+		: Value_(std::move(value)) {}
+	template <not_cvref_type T> inline Atomic<T>::Atomic(const Atomic& other)
+		: Value_(other.get()) {}
+	template <not_cvref_type T> inline Atomic<T>::Atomic(Atomic&& other)
+		: Value_(std::move(other).get()) {}
+
+	template <not_cvref_type T> inline Atomic<T>& Atomic<T>::operator=(const T& other)
 	{
-		if (&other == this)
-			return *this;
-		std::lock_guard<std::mutex> lock(Mutex_);
-		Value_ = other();
+		std::scoped_lock lock(Mutex_);
+		Value_ = other;
+		ConditionVariable_.notify_all();
 		return *this;
 	}
-	template <typename T> inline Atomic<T>& Atomic<T>::operator=(const T& value)
+	template <not_cvref_type T> inline Atomic<T>& Atomic<T>::operator=(T&& other)
 	{
-		std::lock_guard<std::mutex> lock(Mutex_);
-		Value_ = value;
+		std::scoped_lock lock(Mutex_);
+		Value_ = std::move(other);
+		ConditionVariable_.notify_all();
 		return *this;
 	}
-	
-	template <typename T> inline T Atomic<T>::read() const
+	template <not_cvref_type T> inline Atomic<T>& Atomic<T>::operator=(const Atomic& other)
 	{
-		std::lock_guard<std::mutex> lock(Mutex_);
+		std::scoped_lock lock(Mutex_, other.Mutex_);
+		Value_ = other.Value_;
+		ConditionVariable_.notify_all();
+		return *this;
+	}
+	template <not_cvref_type T> inline Atomic<T>& Atomic<T>::operator=(Atomic&& other)
+	{
+		std::scoped_lock lock(Mutex_, other.Mutex_);
+		Value_ = std::move(other.Value_);
+		ConditionVariable_.notify_all();
+		return *this;
+	}
+
+	template <not_cvref_type T> inline T Atomic<T>::get() const&
+	{
+		std::scoped_lock lock(Mutex_);
 		return Value_;
 	}
-	template <typename T> template <typename ReadFunction> inline auto
-		Atomic<T>::read(ReadFunction read_function) const
-		-> decltype(read_function(Value_))
+	template <not_cvref_type T> inline T Atomic<T>::get() &&
+	{
+		std::scoped_lock lock(Mutex_);
+		return std::move(Value_);
+	}
+	template <not_cvref_type T> inline Atomic<T>::operator T() const&
+		{return get();}
+	template <not_cvref_type T> inline Atomic<T>::operator T() &&
+		{return std::move(*this).get();}
+
+	template <not_cvref_type T> template <typename F> inline auto
+		Atomic<T>::apply(F&& f) const -> decltype(f(Value_)) requires requires() {f(Value_);}
+	{
+		std::scoped_lock lock(Mutex_);
+		return f(Value_);
+	}
+	template <not_cvref_type T> template <typename F> inline auto
+		Atomic<T>::apply(F&& f) -> decltype(f(Value_)) requires requires() {f(Value_);}
+	{
+		std::scoped_lock lock(Mutex_);
+		auto&& result = f(Value_);
+		ConditionVariable_.notify_all();
+		return std::forward<decltype(f(Value_))>(result);
+	}
+
+	template <not_cvref_type T> template <typename F, typename ConditionF> inline
+		auto Atomic<T>::apply(F&& f, ConditionF&& condition_f) const -> decltype(f(Value_))
+		requires requires(){f(Value_); {condition_f(Value_)} -> convertible_to<bool>;}
+	{
+		std::unique_lock lock(Mutex_);
+		ConditionVariable_.wait(lock, [this, &condition_f]{return condition_f(Value_);});
+		return f(Value_);
+	}
+	template <not_cvref_type T> template <typename F, typename ConditionF> inline
+		auto Atomic<T>::apply(F&& f, ConditionF&& condition_f) -> decltype(f(Value_))
+		requires requires(){f(Value_); {condition_f(std::declval<const T&>())} -> convertible_to<bool>;}
+	{
+		std::unique_lock lock(Mutex_);
+		ConditionVariable_.wait(lock, [this, &condition_f]{return condition_f(const_cast<const T&>(Value_));});
+		auto&& result = f(Value_);
+		ConditionVariable_.notify_all();
+		return std::forward<decltype(f(Value_))>(result);
+	}
+
+	template <not_cvref_type T> template <typename F, typename ConditionF> inline
+		auto Atomic<T>::apply(F&& f, ConditionF&& condition_f, std::chrono::steady_clock::duration timeout) const
+		-> std::conditional_t<std::same_as<decltype(f(Value_)), void>, bool, std::optional<decltype(f(Value_))>>
+		requires requires(){f(Value_); {condition_f(Value_)} -> convertible_to<bool>;}
+	{
+		std::unique_lock lock(Mutex_);
+		if (ConditionVariable_.wait_for(lock, timeout, [this, &condition_f]{return condition_f(Value_);}))
 		{
-			std::lock_guard<std::mutex> lock(Mutex_);
-			return read_function(Value_);
-		}
-	template <typename T> template <typename ReadFunction, typename WaitFunction> inline auto
-		Atomic<T>::read
-		(ReadFunction read_function, WaitFunction wait_function, std::chrono::steady_clock::duration timeout) const
-		-> std::optional<decltype(read_function(Value_))>
-		{
-			std::unique_lock<std::mutex> lock(Mutex_);
-			if (ConditionVariable_.wait_for(lock, timeout, std::bind(wait_function, std::cref(Value_))))
-				return read_function(Value_);
-			return std::nullopt;
-		}
-	template <typename T> template <typename WriteFunction> inline auto
-		Atomic<T>::write(WriteFunction write_function)
-		-> decltype(write_function(Value_))
-		{
-			std::lock_guard<std::mutex> lock(Mutex_);
-			return write_function(Value_);
-		}
-	template <typename T> template <typename WriteFunction, typename WaitFunction> inline auto
-		Atomic<T>::write
-		(WriteFunction write_function, WaitFunction wait_function, std::chrono::steady_clock::duration timeout)
-		-> std::conditional_t
-		<
-			std::same_as<decltype(write_function(Value_)), void>,
-			WaitResult,
-			std::optional<decltype(write_function(Value_))>
-		>
-		{
-			std::unique_lock<std::mutex> lock(Mutex_);
-			if constexpr (std::same_as<decltype(write_function(Value_)), void>)
+			if constexpr (std::same_as<decltype(f(Value_)), void>)
 			{
-				if (ConditionVariable_.wait_for(lock, timeout, std::bind(wait_function, std::cref(Value_))))
-				{
-					write_function(Value_);
-					return WaitResult::Success;
-				}
-				else
-					return WaitResult::Timeout;
+				f(Value_);
+				return true;
+			}
+			else
+				return f(Value_);
+		}
+		else
+		{
+			if constexpr (std::same_as<decltype(f(Value_)), void>)
+				return false;
+			else
+				return std::nullopt;
+		}
+	}
+	template <not_cvref_type T> template <typename F, typename ConditionF> inline
+		auto Atomic<T>::apply(F&& f, ConditionF&& condition_f, std::chrono::steady_clock::duration timeout)
+		-> std::conditional_t<std::same_as<decltype(f(Value_)), void>, bool, std::optional<decltype(f(Value_))>>
+		requires requires(){f(Value_); {condition_f(std::declval<const T&>())} -> convertible_to<bool>;}
+	{
+		std::unique_lock lock(Mutex_);
+		if (ConditionVariable_.wait_for(lock, timeout, [this, &condition_f]{return condition_f(const_cast<const T&>(Value_));}))
+		{
+			if constexpr (std::same_as<decltype(f(Value_)), void>)
+			{
+				f(Value_);
+				ConditionVariable_.notify_all();
+				return true;
 			}
 			else
 			{
-				if (ConditionVariable_.wait_for(lock, timeout, std::bind(wait_function, std::cref(Value_))))
-					return write_function(Value_);
-				else
-					return std::nullopt;
+				auto&& result = f(Value_);
+				ConditionVariable_.notify_all();
+				return std::forward<decltype(f(Value_))>(result);
 			}
 		}
-	template <typename T> inline
-		typename Atomic<T>::WaitResult Atomic<T>::wait
-		(std::function<bool(const T&)> wait_function, std::chrono::steady_clock::duration timeout) const
+		else
 		{
-			std::unique_lock<std::mutex> lock(Mutex_);
-			if (ConditionVariable_.wait_for(lock, timeout, std::bind(wait_function, std::cref(Value_))))
-				return WaitResult::Success;
-			return WaitResult::Timeout;
+			if constexpr (std::same_as<decltype(f(Value_)), void>)
+				return false;
+			else
+				return std::nullopt;
 		}
+	}
+
+	template <not_cvref_type T> template <typename ConditionF> inline void Atomic<T>::wait(ConditionF&& condition_f) const
+		requires requires(){{condition_f(Value_)} -> convertible_to<bool>;}
+	{
+		std::unique_lock lock(Mutex_);
+		ConditionVariable_.wait(lock, [this, &condition_f]{return condition_f(Value_);});
+	}
+	template <not_cvref_type T> template <typename ConditionF> inline
+		Atomic<T>::WaitResult Atomic<T>::wait(ConditionF&& condition_f, std::chrono::steady_clock::duration timeout) const
+		requires requires(){{condition_f(Value_)} -> convertible_to<bool>;}
+	{
+		std::unique_lock lock(Mutex_);
+		if (ConditionVariable_.wait_for(lock, timeout, [this, &condition_f]{return condition_f(Value_);}))
+			return WaitResult::Success;
+		else
+			return WaitResult::Timeout;
+	}
+
+	template <not_cvref_type T> template <bool Const> inline
+		Atomic<T>::Guard<Const>::Guard
+		(
+			std::unique_lock<std::recursive_mutex>&& lock,
+			std::experimental::observer_ptr<std::conditional_t<Const, const Atomic<T>, Atomic<T>>> value
+		)
+	:	Lock_(std::move(lock)), Value_(value) {}
+	template <not_cvref_type T> template <bool Const> inline Atomic<T>::Guard<Const>::Guard(Guard<Const>&& other)
+	:	Lock_(std::move(other.Lock_)), Value_(other.Value_) {}
+	template <not_cvref_type T> template <bool Const> inline Atomic<T>::Guard<Const>::~Guard()
+		{Value_->ConditionVariable_.notify_all();}
+
+	template <not_cvref_type T> template <bool Const> inline
+		std::conditional_t<Const, const T&, T&> Atomic<T>::Guard<Const>::operator*() const
+		{return Value_->Value_;}
+	template <not_cvref_type T> template <bool Const> inline
+		std::conditional_t<Const, const T*, T*> Atomic<T>::Guard<Const>::operator->() const
+		{return &Value_->Value_;}
+	template <not_cvref_type T> template <bool Const> inline
+		std::conditional_t<Const, const T&, T&> Atomic<T>::Guard<Const>::value() const
+		{return Value_->Value_;}
+	
+	template <not_cvref_type T> inline Atomic<T>::Guard<true> Atomic<T>::lock() const
+		{return {std::unique_lock(Mutex_), std::experimental::make_observer(this)};}
+	template <not_cvref_type T> inline Atomic<T>::Guard<false> Atomic<T>::lock()
+		{return {std::unique_lock(Mutex_), std::experimental::make_observer(this)};}
+	template <not_cvref_type T> template <typename ConditionF> inline
+		Atomic<T>::Guard<true> Atomic<T>::lock(ConditionF&& condition_f) const
+		requires requires(){{condition_f(Value_)} -> convertible_to<bool>;}
+	{
+		std::unique_lock lock(Mutex_);
+		ConditionVariable_.wait(lock, [this, &condition_f]{return condition_f(Value_);});
+		return {{std::move(lock), std::experimental::make_observer(this)}};
+	}
+	template <not_cvref_type T> template <typename ConditionF> inline
+		Atomic<T>::Guard<false> Atomic<T>::lock(ConditionF&& condition_f)
+		requires requires(){{condition_f(std::declval<const T&>())} -> convertible_to<bool>;}
+	{
+		std::unique_lock lock(Mutex_);
+		ConditionVariable_.wait(lock, [this, &condition_f]{return condition_f(const_cast<const T&>(Value_));});
+		return {{std::move(lock), std::experimental::make_observer(this)}};
+	}
+	template <not_cvref_type T> template <typename ConditionF> inline std::optional<typename Atomic<T>::Guard<true>>
+		Atomic<T>::lock(ConditionF&& condition_f, std::chrono::steady_clock::duration timeout) const
+		requires requires(){{condition_f(Value_)} -> convertible_to<bool>;}
+	{
+		std::unique_lock lock(Mutex_);
+		if (ConditionVariable_.wait_for(lock, timeout, [this, &condition_f]{return condition_f(Value_);}))
+			return {{std::move(lock), std::experimental::make_observer(this)}};
+		else
+			return std::nullopt;
+	}
+	template <not_cvref_type T> template <typename ConditionF> inline std::optional<typename Atomic<T>::Guard<false>>
+		Atomic<T>::lock(ConditionF&& condition_f, std::chrono::steady_clock::duration timeout)
+		requires requires(){{condition_f(std::declval<const T&>())} -> convertible_to<bool>;}
+	{
+		std::unique_lock lock(Mutex_);
+		if
+		(
+			ConditionVariable_.wait_for
+				(lock, timeout, [this, &condition_f]{return condition_f(const_cast<const T&>(Value_));})
+		)
+			return {{std::move(lock), std::experimental::make_observer(this)}};
+		else
+			return std::nullopt;
+	}
 }
