@@ -24,31 +24,31 @@ namespace mirism
 		{std::thread(Logger::telegram_notify, message).detach();}
 
 	inline Atomic<std::multimap<const void*, std::string_view>> Logger::Objects;
-	inline Logger::ObjectMonitor::ObjectMonitor()
-	:	CreateTime_(std::chrono::steady_clock::now()), Type_(boost::core::demangle(typeid(*this).name()))
+	template <typename T> inline Logger::ObjectMonitor<T>::ObjectMonitor()
+	:	CreateTime_(std::chrono::steady_clock::now())
 	{
 		Guard guard;
-		guard.log<Level::Debug>("create {} at {}."_f(Type_, fmt::ptr(this)));
-		Objects.lock()->emplace(this, Type_);
+		guard.log<Level::Debug>("create {} at {}."_f(nameof::nameof_full_type<T>(), fmt::ptr(this)));
+		Objects.lock()->emplace(this, nameof::nameof_full_type<T>());
 	}
-	inline Logger::ObjectMonitor::~ObjectMonitor()
+	template <typename T> inline Logger::ObjectMonitor<T>::~ObjectMonitor()
 	{
 		Guard guard;
 		guard.log<Level::Debug>("destroy {} at {} after {} ms."_f
 		(
-			Type_, fmt::ptr(this),
+			nameof::nameof_full_type<T>(), fmt::ptr(this),
 			std::chrono::duration_cast<std::chrono::milliseconds>
 				(std::chrono::steady_clock::now() - CreateTime_).count()
 		));
 		auto&& lock = Objects.lock();
 		auto range = lock->equal_range(this);
 		for (auto it = range.first; it != range.second; it++)
-			if (it->second == Type_)
+			if (it->second == nameof::nameof_full_type<T>())
 			{
 				lock->erase(it);
 				return;
 			}
-		guard.log<Level::Error>("{} {} not found in Logger::Objects."_f(fmt::ptr(this), Type_));
+		guard.log<Level::Error>("{} {} not found in Logger::Objects."_f(fmt::ptr(this), nameof::nameof_full_type<T>()));
 	}
 
 	inline Atomic<std::map<std::size_t, std::size_t>> Logger::Threads;
@@ -128,7 +128,7 @@ namespace mirism
 				(
 					stack[0].source_file().contains("mirism/")
 					? stack[0].source_file().substr
-						(stack[0].source_file().find_last_of("mirism/") + "mirism/"s.length())
+						(stack[0].source_file().rfind("mirism/") + "mirism/"s.length())
 					: stack[0].source_file()
 				),
 				stack[0].source_line() == 0 ? "??"s : "{}"_f(stack[0].source_line()),

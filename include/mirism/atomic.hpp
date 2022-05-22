@@ -84,7 +84,6 @@ namespace mirism
 			public: std::conditional_t<Const, const T*, T*> operator->() const;
 			public: std::conditional_t<Const, const T&, T&> value() const;
 		};
-
 		public: Guard<true> lock() const;
 		public: Guard<false> lock();
 		public: template <typename ConditionF> Guard<true> lock(ConditionF&& condition_f) const

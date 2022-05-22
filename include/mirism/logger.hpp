@@ -35,10 +35,9 @@ namespace mirism
 
 		// Monitor the lifetime of an object
 		// usage: struct my_class : protected Logger::ObjectMonitor<my_class> {}
-		public: class ObjectMonitor
+		public: template <typename T> class ObjectMonitor
 		{
 			protected: const std::chrono::time_point<std::chrono::steady_clock> CreateTime_;
-			protected: const std::string Type_;
 
 			// call log<Debug>("create {type} at {address}.");
 			protected: [[gnu::always_inline]] ObjectMonitor();
