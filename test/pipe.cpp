@@ -1,11 +1,12 @@
 # include <mirism/common.impl.hpp>
 # include <mirism/atomic.impl.hpp>
 # include <mirism/pipe.impl.hpp>
+# include <mirism/logger.impl.hpp>
 # include <iostream>
 
 int main()
 {
-	auto p = mirism::Pipe::create();
+	auto p = std::make_shared<mirism::Pipe>();
 	p->push("Hello");
 	p->push("World");
 	p->push(mirism::Pipe::Signal::EndOfFile);

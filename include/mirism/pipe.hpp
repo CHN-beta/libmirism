@@ -1,10 +1,10 @@
 # pragma once
 
-# include <mirism/atomic.hpp>
+# include <mirism/logger.hpp>
 
 namespace mirism
 {
-	class Pipe
+	class Pipe : public Logger::ObjectMonitor<Pipe>
 	{
 		public:
 			enum class Signal
@@ -15,12 +15,8 @@ namespace mirism
 
 		protected:
 			Atomic<std::queue<std::variant<std::string, Signal>>> Queue_;
-
-			Pipe() = default;
-		
 		public:
-			static std::shared_ptr<Pipe> create();
-
+			Pipe() = default;
 			Pipe(const Pipe&) = delete;
 			Pipe(Pipe&&) = delete;
 			Pipe& operator=(const Pipe&) = delete;
