@@ -1,5 +1,4 @@
 # pragma once
-
 # include <mirism/common.hpp>
 
 namespace mirism

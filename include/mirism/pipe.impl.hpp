@@ -1,5 +1,4 @@
 # pragma once
-
 # include <mirism/pipe.hpp>
 
 namespace mirism
