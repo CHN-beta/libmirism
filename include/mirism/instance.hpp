@@ -53,7 +53,7 @@ namespace mirism
 			std::unique_ptr<server::Base> server, std::unique_ptr<client::Base> client,
 			std::unique_ptr<handler::Base> handler
 		);
-		public: virtual ~Instance();
+		public: virtual ~Instance() = default;
 
 		public: void run(bool async = false);
 	};

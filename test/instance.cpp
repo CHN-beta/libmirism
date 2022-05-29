@@ -1,1 +1,1 @@
-# include <mirism/instance.hpp>
+# include <mirism/instance.impl.hpp>
