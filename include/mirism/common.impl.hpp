@@ -20,7 +20,7 @@ namespace mirism
 	template <typename Char, std::size_t N> constexpr inline FixedString<Char, N>::FixedString(const Char str[N])
 		{std::copy_n(str, N, data);}
 	template <typename Char, std::size_t N> constexpr inline
-		std::basic_string_view<Char> FixedString<Char, N>::str() const&
+		std::basic_string_view<Char> FixedString<Char, N>::string_view() const&
 	{
 		if constexpr (N == 1)
 			return {};

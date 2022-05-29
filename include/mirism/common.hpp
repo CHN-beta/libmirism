@@ -38,6 +38,9 @@ namespace mirism
 	template<typename... Ts> std::size_t hash(Ts&&... objs);
 	void unused(auto&&...);
 
+	static_assert(sizeof(unsigned long long) == 8, "unsigned long long is not 8 bytes");
+	using uint128_t = unsigned long long;
+
 	inline namespace literals
 	{
 		using namespace std::literals;
@@ -61,8 +64,8 @@ namespace mirism
 	{
 		Char data[N];
 		constexpr FixedString(const Char str[N]);
-		constexpr std::basic_string_view<Char> str() const&;
-		constexpr auto str() const&& = delete;
+		constexpr std::basic_string_view<Char> string_view() const&;
+		constexpr auto string_view() const&& = delete;
 		constexpr std::size_t size() const;
 	};
 	inline namespace literals

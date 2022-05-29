@@ -13,3 +13,7 @@ add_test(pipe test_pipe)
 add_executable(test_logger logger.cpp)
 target_link_libraries(test_logger libmirism)
 add_test(logger test_logger)
+
+add_executable(test_instance instance.cpp)
+target_link_libraries(test_instance libmirism)
+add_test(instance test_instance)

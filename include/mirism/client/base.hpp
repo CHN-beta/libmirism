@@ -7,6 +7,6 @@ namespace mirism::client
 	class Base
 	{
 		public: virtual ~Base() = default;
-		public: virtual std::optional<Response> operator()(Request) = 0;
+		public: virtual std::optional<Instance::Response> operator()(Instance::Request request) = 0;
 	};
 };
