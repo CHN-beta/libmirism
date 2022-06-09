@@ -17,3 +17,7 @@ add_test(logger test_logger)
 add_executable(test_instance instance.cpp)
 target_link_libraries(test_instance libmirism)
 add_test(instance test_instance)
+
+add_executable(test_httplib httplib.cpp)
+target_link_libraries(test_httplib libmirism)
+add_test(httplib test_httplib)

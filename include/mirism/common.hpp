@@ -33,6 +33,9 @@
 
 # include <boost/core/demangle.hpp>
 
+# define CPPHTTPLIB_OPENSSL_SUPPORT
+# include <httplib.h>
+
 namespace mirism
 {
 	template<typename... Ts> std::size_t hash(Ts&&... objs);
