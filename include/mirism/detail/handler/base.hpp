@@ -1,5 +1,5 @@
 # pragma once
-# include <mirism/client/base.hpp>
+# include <mirism/detail/client/base.hpp>
 
 namespace mirism::handler
 {
