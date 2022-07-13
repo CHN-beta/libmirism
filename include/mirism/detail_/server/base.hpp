@@ -1,5 +1,5 @@
 # pragma once
-# include <mirism/detail/instance.hpp>
+# include <mirism/detail_/instance.hpp>
 
 namespace mirism::server
 {

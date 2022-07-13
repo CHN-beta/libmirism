@@ -1,6 +1,6 @@
 # pragma once
-# include <mirism/detail/backend/httplib.hpp>
-# include <mirism/detail/server/base.hpp>
+# include <mirism/detail_/backend/httplib.hpp>
+# include <mirism/detail_/server/base.hpp>
 
 namespace mirism::server
 {

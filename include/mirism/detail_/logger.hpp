@@ -1,5 +1,5 @@
 # pragma once
-# include <mirism/detail/atomic.hpp>
+# include <mirism/detail_/atomic.hpp>
 
 namespace mirism
 {

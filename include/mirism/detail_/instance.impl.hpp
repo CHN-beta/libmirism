@@ -1,8 +1,8 @@
 # pragma once
-# include <mirism/detail/instance.hpp>
-# include <mirism/detail/server/base.hpp>
-# include <mirism/detail/client/base.hpp>
-# include <mirism/detail/handler/base.hpp>
+# include <mirism/detail_/instance.hpp>
+# include <mirism/detail_/server/base.hpp>
+# include <mirism/detail_/client/base.hpp>
+# include <mirism/detail_/handler/base.hpp>
 
 namespace mirism
 {
