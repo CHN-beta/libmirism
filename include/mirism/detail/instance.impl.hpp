@@ -6,74 +6,128 @@
 
 namespace mirism
 {
-	inline Instance::Request Instance::normalize(Request request)
+	inline Instance::Instance
+	(
+		std::shared_ptr<server::Base> server, std::shared_ptr<handler::Base> handler,
+		std::shared_ptr<client::Base> client
+	)
+	: Server_(server), Handler_(handler), Client_(client), Status_(Status::Stopped)
+		{Logger::Guard log(Server_, Handler_, Client_);}
+
+	inline Instance& Instance::run(bool async)
 	{
-		Logger::Guard log(request);
-		if (request.Version && !std::set<std::string>{"1.0", "1.1", "2", "3"}.contains(*request.Version))
+		Logger::Guard log(async);
+		auto status = std::make_optional(Status_.lock());
+		if (**status != Status::Stopped) [[unlikely]]
+			log.log<Logger::Level::Error>("Instance is already running. Ignoring request.");
+		else if (!Server_)  [[unlikely]]
+			log.log<Logger::Level::Error>("Server is not set. Ignoring request.");
+		else
 		{
-			auto old_version = request.Version;
-			// Version is empty string
-			if (std::regex_match(*request.Version, R"(\s*)"_re))
+			if (async)
 			{
-				request.Version = std::nullopt;
-				log.log<Logger::Level::Info>("Convert Version from {} to {}."_f(old_version, request.Version));
-			}
-			// http/x.x or h/x.x or hx.x
-			else if (std::smatch match; std::regex_match
-			(
-				*request.Version, match,
-				std::regex(R"(\s*(http|h)\s*(/?)\s*(1\.0|1\.1|1|2\.0|2|3))", std::regex_constants::icase)
-			))
-			{
-				if (match[3].str() == "1")
-					request.Version = "1.0";
-				else if (match[3].str() == "2.0")
-					request.Version = "2";
+				auto shutdown_handler = ShutdownHandler_.lock();
+				*shutdown_handler = (*Server_)
+				(
+					async, std::experimental::make_observer(Handler_.get()),
+					std::experimental::make_observer(Client_.get())
+				);
+				if (!*shutdown_handler) [[unlikely]]
+					log.log<Logger::Level::Error>("Server returned nullptr, it has failed to start.");
 				else
-					request.Version = match[3].str();
-				log.log<Logger::Level::Info>("Convert Version from {} to {}."_f(old_version, request.Version));
-			}
-			// quic to 3
-			else if (std::regex_match(*request.Version, std::regex(R"(\s*quic\s*)", std::regex_constants::icase)))
-			{
-				request.Version = "3";
-				log.log<Logger::Level::Info>("Convert Version from {} to {}."_f(old_version, request.Version));
+					**status = Status::RunningAsync;
 			}
 			else
 			{
-				log.log<Logger::Level::Error>("Invalid Version {}, remove it."_f(request.Version));
-				request.Version = std::nullopt;
+				**status = Status::RunningSync;
+				std::jthread thread([&, this]
+				{
+					Logger::Guard log;
+					auto result = (*Server_)
+					(
+						async, std::experimental::make_observer(Handler_.get()),
+						std::experimental::make_observer(Client_.get())
+					);
+					if (result) [[unlikely]]
+						log.log<Logger::Level::Error>("Server returned shutdown handler in sync mode. Ignoring it.");
+				});
+				status.reset();
+				thread.join();
+				Status_ = Status::Stopped;
 			}
 		}
-		
+		return *this;
 	}
-	inline Instance::Instance
-	(
-		std::unique_ptr<server::Base> server, std::unique_ptr<client::Base> client,
-		std::unique_ptr<handler::Base> handler
-	)
-	: Server_(std::move(server)), Client_(std::move(client)), Handler_(std::move(handler))
+	inline Instance& Instance::shutdown()
 	{
-		Logger::Guard guard(Server_, Client_, Handler_);
-		if (!Server_ || !Client_ || !Handler_)
-			guard.log<Logger::Level::Error>("nullptr is not allowed, will run anyway");
+		Logger::Guard log;
+		auto status = Status_.lock();
+		if (*status == Status::Stopped) [[unlikely]]
+			log.log<Logger::Level::Error>("Instance is already stopped. Ignoring request.");
+		else if (*status == Status::RunningSync) [[unlikely]]
+			log.log<Logger::Level::Error>("Instance is running in sync mode. Ignoring request.");
+		else
+		{
+			auto shutdown_handler = ShutdownHandler_.lock();
+			if (!*shutdown_handler) [[unlikely]]
+				log.log<Logger::Level::Error>("Shutdown handler is not set. Ignoring request.");
+			else
+			{
+				**shutdown_handler();
+				*status = Status::Stopped;
+				*shutdown_handler = nullptr;
+			}
+		}
+		return *this;
 	}
-	inline void Instance::run(bool async)
-		{(*Server_)(async, [this](auto request){return (*Handler_)(request, *Client_);});}
-	inline std::ostream& operator<<(std::ostream& os, const Instance::Request& request)
+
+	template <auto Instance::* Member, FixedString Name> inline Instance& Instance::set_(auto value)
 	{
-		return os << "{} {} {} {} {} {} {} {} {} {}"_f
+		Logger::Guard log(value);
+		auto status = Status_.lock();
+		if (Status_ != Status::Stopped) [[unlikely]]
+			log.log<Logger::Level::Error>("Instance is running. Set {} anyway."_f(Name));
+		this->*Member = value;
+		return *this;
+	}
+	inline Instance& Instance::set_server(std::shared_ptr<server::Base> server)
+		{return set_<&Instance::Server_, "server">(server);}
+	inline Instance& Instance::set_handler(std::shared_ptr<handler::Base> handler)
+		{return set_<&Instance::Handler_, "handler">(handler);}
+	inline Instance& Instance::set_client(std::shared_ptr<client::Base> client)
+		{return set_<&Instance::Client_, "client">(client);}
+	template <auto Instance::* Member, FixedString Name> inline auto Instance::get_() const
+	{
+		Logger::Guard log(value);
+		auto status = Status_.lock();
+		if constexpr (std::same_as<decltype(Member), decltype(&Instance::Status_)>)
+			if constexpr (Member == &Instance::Status_)
+				log.rtn(*status);
+		log.rtn(this->*Member.get());
+	}
+	inline std::shared_ptr<server::Base> Instance::get_server() const
+		{return get_<&Instance::Server_, "server">();}
+	inline std::shared_ptr<handler::Base> Instance::get_handler() const
+		{return get_<&Instance::Handler_, "handler">();}
+	inline std::shared_ptr<client::Base> Instance::get_client() const
+		{return get_<&Instance::Client_, "client">();}
+	inline Instance::Status Instance::get_status() const
+		{return get_<&Instance::Status_, "status">();}
+
+	inline std::ostream& stream_operators::operator<<(std::ostream& os, const Instance::Request& request)
+	{
+		return os << "{} {} {} {} {} {} {{{} {}}} {{{} {}}} {}"_f
 		(
-			request.Version, request.Method, request.Path, request.Headers, request.Body,
-			request.RemoteIP, request.RemotePort, request.LocalIP, request.LocalPort
+			request.Version, request.Method, request.Domain, request.Path, request.Headers, request.Body,
+			request.Remote.IP, request.Remote.Port, request.Local.IP, request.Local.Port, request.Cancelled
 		);
 	}
-	inline std::ostream& operator<<(std::ostream& os, const Instance::Response& response)
+	inline std::ostream& stream_operators::operator<<(std::ostream& os, const Instance::Response& response)
 	{
-		return os << "{} {} {} {} {}"_f
+		return os << "{} {} {} {{{} {}}} {{{} {}}}"_f
 		(
 			response.Status, response.Headers, response.Body,
-			response.RemoteIP, response.RemotePort, response.LocalIP, response.LocalPort
+			response.Remote.IP, response.Remote.Port, response.Local.IP, response.Local.Port
 		);
 	}
 }

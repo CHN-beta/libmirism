@@ -3,10 +3,8 @@
 
 namespace mirism::server
 {
-	inline Httplib<false>::Httplib(std::string host, int port)
-		: Host_(host), Port_(port) {Logger::Guard guard(Host_, Port_);}
-	inline void Httplib<false>::operator()
-		(bool async, std::function<Instance::Response(Instance::Request)> handler)
+	inline httplib::Server::HandlerWithResponse detail_::HttplibBase::create_handler_wrap_
+		(std::function<Instance::Response(Instance::Request)> handler)
 	{
 		auto handler_wrapper = [handler](const auto& request_httplib, auto& response_httplib)
 		{
@@ -59,8 +57,16 @@ namespace mirism::server
 				}
 			return httplib::Server::HandlerResponse::Handled;
 		};
+		return handler_wrapper;
+	}
+	inline Httplib<false>::Httplib(std::string host, int port)
+		: Host_(host), Port_(port) {Logger::Guard guard(Host_, Port_);}
+	inline void Httplib<false>::operator()
+		(bool async, std::function<Instance::Response(Instance::Request)> handler)
+	{
 		httplib::Server svr;
-		svr.set_pre_routing_handler(handler_wrapper);
+		svr.set_pre_routing_handler(create_handler_wrap_(handler));
+		if 
 		svr.listen(Host_.c_str(), Port_);
 	}
 }

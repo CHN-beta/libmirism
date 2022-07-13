@@ -4,8 +4,17 @@
 
 namespace mirism::server
 {
+	namespace detail_
+	{
+		class HttplibBase : public Base
+		{
+			public: virtual ~HttplibBase() = default;
+			protected: httplib::Server::HandlerWithResponse create_handler_wrap_
+				(std::function<Instance::Response(Instance::Request)> handler);
+		};
+	}
 	template <bool UseTls> class Httplib;
-	template <> class Httplib<false> : public Base, public Logger::ObjectMonitor<Httplib<false>>
+	template <> class Httplib<false> : public detail_::HttplibBase, public Logger::ObjectMonitor<Httplib<false>>
 	{
 		protected: std::unique_ptr<httplib::Server> Server_;
 		protected: std::string Host_;
@@ -13,9 +22,9 @@ namespace mirism::server
 		public: Httplib(std::string host, int port);
 		public: void operator()(bool async, std::function<Instance::Response(Instance::Request)> handler) override;
 	};
-	template <> class Httplib<true> : public Httplib<false>
+	template <> class Httplib<true> : public detail_::HttplibBase, public Logger::ObjectMonitor<Httplib<true>>
 	{
-		protected: std::unique_ptr<httplib::Server> Server_;
+		protected: std::unique_ptr<httplib::SSLServer> Server_;
 		protected: std::string Host_;
 		protected: int Port_;
 		protected: std::string CertPath_, KeyPath_;

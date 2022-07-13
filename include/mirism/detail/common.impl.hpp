@@ -14,6 +14,9 @@ namespace mirism
 	inline std::regex literals::operator""_re(const char* str, std::size_t len)
 		{return std::regex(str, len);}
 
+	template <typename Char, Char... c> inline std::basic_ostream<Char>& stream_operators::operator<<
+		(std::basic_ostream<Char>& os, StaticString<Char, c...>)
+		{return os << std::basic_string_view{c...};}
 	template <typename Char, Char... c> consteval inline StaticString<Char, c...> literals::operator""_ss()
 		{return {};}
 
@@ -29,6 +32,9 @@ namespace mirism
 	}
 	template <typename Char, std::size_t N> constexpr inline std::size_t FixedString<Char, N>::size() const
 		{return N - 1;}
+	template <typename Char, std::size_t N> inline std::basic_ostream<Char>& stream_operators::operator<<
+		(std::basic_ostream<Char>& os, const FixedString<Char, N>& str)
+		{return os << str.string_view();}
 	template <FixedString FS> constexpr inline decltype(FS) literals::operator""_fs()
 		{return FS;}
 
@@ -68,6 +74,18 @@ namespace mirism
 # pragma GCC diagnostic pop
 		};
 	}
+
+	template <typename T> constexpr inline bool CiStringLess::operator()(const T& lhs, const T& rhs) const
+	{
+		return std::lexicographical_compare
+		(
+			lhs.begin(), lhs.end(), rhs.begin(), rhs.end(),
+			[](char lhs, char rhs) {return std::tolower(lhs) < std::tolower(rhs);}
+		);
+	}
+
+	template <Enum T> inline std::ostream& stream_operators::operator<<(std::ostream& os, T value)
+		{return os << "{}::{}"_f(nameof::nameof_type<T>(), nameof::nameof_enum(value));}
 }
 
 template <typename T> inline constexpr
@@ -89,6 +107,7 @@ template <mirism::detail_::OptionalWrap Wrap> template <typename FormatContext> 
 {
 	static_assert(std::same_as<typename FormatContext::char_type, char>);
 	using namespace mirism::literals;
+	using namespace mirism::stream_operators;
 	using value_t = typename mirism::detail_::non_cv_value_type<Wrap>::type;
 	auto format_value_type = [&, this](const value_t& value)
 	{

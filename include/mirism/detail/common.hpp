@@ -54,10 +54,10 @@ namespace mirism
 		static constexpr std::array<Char, sizeof...(c)> Array{c...};
 		static constexpr std::basic_string_view<Char> StringView{Array.data(), sizeof...(c)};
 	};
+	inline namespace stream_operators
+		{template <typename Char, Char... c> std::ostream& operator<<(std::ostream& os, StaticString<Char, c...>);}
 	inline namespace literals
-	{
-		template <typename Char, Char... c> consteval StaticString<Char, c...> operator""_ss();
-	}
+		{template <typename Char, Char... c> consteval StaticString<Char, c...> operator""_ss();}
 
 	// Store a string in a fixed-size array
 	template <typename Char, std::size_t N> struct FixedString
@@ -68,20 +68,19 @@ namespace mirism
 		constexpr auto string_view() const&& = delete;
 		constexpr std::size_t size() const;
 	};
-	inline namespace literals
+	inline namespace stream_operators
 	{
-		template <FixedString FS> constexpr decltype(FS) operator""_fs();
+		template <typename Char, std::size_t N> std::ostream& operator<<
+			(std::ostream& os, const FixedString<Char, N>& str);
 	}
+	inline namespace literals
+		{template <FixedString FS> constexpr decltype(FS) operator""_fs();}
 
 	// auto str = "{} {}!"_f("Hello", "World"); // str == "Hello World!"
 	template <typename Char, Char... c> struct FormatLiteralHelper : protected StaticString<Char, c...>
-	{
-		template <typename... Param> std::basic_string<Char> operator()(Param&&... param) const;
-	};
+		{template <typename... Param> std::basic_string<Char> operator()(Param&&... param) const;};
 	inline namespace literals
-	{
-		template <typename Char, Char... c> consteval FormatLiteralHelper<Char, c...> operator""_f();
-	}
+		{template <typename Char, Char... c> consteval FormatLiteralHelper<Char, c...> operator""_f();}
 
 	template <typename T> concept not_cvref_type = std::same_as<T, std::remove_cvref_t<T>>;
 
@@ -131,8 +130,7 @@ namespace mirism
 	{
 		template <typename C, typename T> struct SpecializationOfStaticStringHelper : std::false_type {};
 		template <typename C, C... c, typename T>
-			struct SpecializationOfStaticStringHelper<C, StaticString<T, c...>> : std::true_type
-			{};
+			struct SpecializationOfStaticStringHelper<C, StaticString<T, c...>> : std::true_type {};
 	}
 	template <typename T, typename C> concept specialization_of_static_string
 		= detail_::SpecializationOfStaticStringHelper<C, T>::value;
@@ -153,6 +151,16 @@ namespace mirism
 		};
 	}
 	template <auto F> inline auto staticize = detail_::StaticizeHelper<decltype(F)>::template staticize<F>;
+
+	struct CiStringLess {template <typename T> constexpr bool operator()(const T& lhs, const T& rhs) const;};
+
+	template <typename T> struct remove_member_pointer {using type = T;};
+	template <typename C, typename T> struct remove_member_pointer<T C::*> {using type = T;};
+	template <typename T> using remove_member_pointer_t = typename remove_member_pointer<T>::type;
+
+	template <typename T> concept Enum = std::is_enum_v<T>;
+
+	inline namespace stream_operators {template <Enum T> std::ostream& operator<<(std::ostream& os, T value);}
 }
 
 // make smart pointer and std::optional formatable

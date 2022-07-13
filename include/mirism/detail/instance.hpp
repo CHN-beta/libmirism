@@ -12,56 +12,78 @@ namespace mirism
 	{
 
 		// All the content in EndPoint, Request and Response should be legal (e.g. Host only contains legal characters,
-		// and so on). Besides, the following restrictions are imposed:
-		// 	* Version should be std::nullopt or "1.0", "1.1", "2", "3".
-		//  * Method is in upper case, and only these values are allowed:
-		// 		"GET", "HEAD", "POST", "PUT", "DELETE", "CONNECT", "OPTIONS", "TRACE", "PATCH"
-		//  * If there is no reqeust or response body, Body could be set either as nullptr or a pipe with immediate EOF.
-		//  * Domain is in lower case and have no leading or trailing '.'. It may be extracted from Host header or not,
-		//      depending on the implementation. It must not be an ip address, and must not have following port number.
-		// 	* Keys in Headers are in lower case;
-		//  * Status should be in range [100, 599].
-		// It is not convinient to check the content meets these restrictions or not at every write time, so that we use
-		// function normalize to do some transform to make sure the content meets these restrictions.
+		// and so on).
+		public: enum class Scheme {Http, Https};
+		public: enum class HttpVersion {v1_0, v1_1, v2, v3};
+		public: enum class HttpMethod {Get, Head, Post, Put, Delete, Connect, Options, Trace, Patch};
 		public: struct Request
 		{
-			std::optional<std::string> Version;
-			std::string Method;
+			std::optional<Scheme> Scheme;
+			std::optional<HttpVersion> Version;
+			HttpMethod Method;
 			std::optional<std::string> Domain;
 			std::string Path;
-			std::multimap<std::string, std::string> Headers;
+			std::multimap<std::string, std::string, CiStringLess> Headers;
 			std::shared_ptr<Pipe> Body;
-			std::optional<std::uint32_t> RemoteIP;
-			std::optional<std::uint16_t> RemotePort;
-			std::optional<std::uint32_t> LocalIP;
-			std::optional<std::uint16_t> LocalPort;
+			struct
+			{
+				std::optional<std::uint32_t> IP;
+				std::optional<std::uint16_t> Port;
+			} Remote, Local;
+			std::shared_ptr<Atomic<bool>> Cancelled;
 		};
 		public: struct Response
 		{
 			std::uint16_t Status;
-			std::multimap<std::string, std::string> Headers;
+			std::multimap<std::string, std::string, CiStringLess> Headers;
 			std::shared_ptr<Pipe> Body;
-			std::optional<std::uint32_t> RemoteIP;
-			std::optional<std::uint16_t> RemotePort;
-			std::optional<std::uint32_t> LocalIP;
-			std::optional<std::uint16_t> LocalPort;
+			struct
+			{
+				std::optional<std::uint32_t> IP;
+				std::optional<std::uint16_t> Port;
+			} Remote, Local;
 		};
-		public: static Request normalize(Request request);
-		public: static Response normalize(Response response);
 
-		protected: std::unique_ptr<server::Base> Server_;
-		protected: std::unique_ptr<client::Base> Client_;
-		protected: std::unique_ptr<handler::Base> Handler_;
+		protected: std::shared_ptr<server::Base> Server_;
+		protected: std::shared_ptr<handler::Base> Handler_;
+		protected: std::shared_ptr<client::Base> Client_;
+
+		// Define the status of the instance, its lock is also used to prevent the member function of Instance be called
+		// symultaneously.
+		public: enum class Status {RunningSync, RunningAsync, Stopped};
+		protected: Atomic<Status> Status_;
+
+		// Under async mode, notify the server object to stop.
+		public: class ShutdownHandler
+		{
+			public: virtual ~ShutdownHandler() = default;
+			public: virtual void operator()() = 0;
+		};
+		protected: Atomic<std::shared_ptr<ShutdownHandler>> ShutdownHandler_;
 
 		public: Instance
 		(
-			std::unique_ptr<server::Base> server, std::unique_ptr<client::Base> client,
-			std::unique_ptr<handler::Base> handler
+			std::shared_ptr<server::Base> server = nullptr, std::shared_ptr<handler::Base> handler = nullptr,
+			std::shared_ptr<client::Base> client = nullptr
 		);
 		public: virtual ~Instance() = default;
 
-		public: void run(bool async = false);
+		public: Instance& run(bool async = false);
+		public: Instance& shutdown();
+
+		protected: template <auto Instance::* Member, FixedString Name> [[gnu::always_inline]] Instance& set_(auto value);
+		public: Instance& set_server(std::shared_ptr<server::Base> server = nullptr);
+		public: Instance& set_handler(std::shared_ptr<handler::Base> handler = nullptr);
+		public: Instance& set_client(std::shared_ptr<client::Base> client = nullptr);
+		protected: template <auto Instance::* Member, auto Name> [[gnu::always_inline]] auto get_() const;
+		public: std::shared_ptr<server::Base> get_server() const;
+		public: std::shared_ptr<handler::Base> get_handler() const;
+		public: std::shared_ptr<client::Base> get_client() const;
+		public: Status get_status() const;
 	};
-	std::ostream& operator<<(std::ostream& os, const Instance::Request& request);
-	std::ostream& operator<<(std::ostream& os, const Instance::Response& response);
+	inline namespace stream_operators
+	{
+		std::ostream& operator<<(std::ostream& os, const Instance::Request& request);
+		std::ostream& operator<<(std::ostream& os, const Instance::Response& response);
+	}
 }

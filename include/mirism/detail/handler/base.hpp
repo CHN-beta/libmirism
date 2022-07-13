@@ -7,6 +7,10 @@ namespace mirism::handler
 	class Base
 	{
 		public: virtual ~Base() = default;
-		public: virtual Instance::Response operator()(Instance::Request request, client::Base& client) = 0;
+		public: virtual std::unique_ptr<Instance::Response> operator()
+		(
+			std::unique_ptr<Instance::Request> request = nullptr,
+			std::experimental::observer_ptr<client::Base> client = nullptr
+		) = 0;
 	};
 }
