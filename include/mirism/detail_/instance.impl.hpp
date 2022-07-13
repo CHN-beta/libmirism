@@ -40,7 +40,7 @@ namespace mirism
 			else
 			{
 				**status = Status::RunningSync;
-				std::jthread thread([&, this]
+				std::thread thread([&, this]
 				{
 					Logger::Guard log;
 					auto result = (*Server_)
@@ -73,7 +73,7 @@ namespace mirism
 				log.log<Logger::Level::Error>("Shutdown handler is not set. Ignoring request.");
 			else
 			{
-				**shutdown_handler();
+				(**shutdown_handler)();
 				*status = Status::Stopped;
 				*shutdown_handler = nullptr;
 			}
@@ -98,12 +98,9 @@ namespace mirism
 		{return set_<&Instance::Client_, "client">(client);}
 	template <auto Instance::* Member, FixedString Name> inline auto Instance::get_() const
 	{
-		Logger::Guard log(value);
+		Logger::Guard log;
 		auto status = Status_.lock();
-		if constexpr (std::same_as<decltype(Member), decltype(&Instance::Status_)>)
-			if constexpr (Member == &Instance::Status_)
-				log.rtn(*status);
-		log.rtn(this->*Member.get());
+		return log.rtn(this->*Member);
 	}
 	inline std::shared_ptr<server::Base> Instance::get_server() const
 		{return get_<&Instance::Server_, "server">();}
@@ -112,7 +109,7 @@ namespace mirism
 	inline std::shared_ptr<client::Base> Instance::get_client() const
 		{return get_<&Instance::Client_, "client">();}
 	inline Instance::Status Instance::get_status() const
-		{return get_<&Instance::Status_, "status">();}
+		{return Logger::Guard().rtn(Status_.get());}
 
 	inline std::ostream& stream_operators::operator<<(std::ostream& os, const Instance::Request& request)
 	{

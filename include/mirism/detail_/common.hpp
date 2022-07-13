@@ -55,7 +55,7 @@ namespace mirism
 		static constexpr std::basic_string_view<Char> StringView{Array.data(), sizeof...(c)};
 	};
 	inline namespace stream_operators
-		{template <typename Char, Char... c> std::ostream& operator<<(std::ostream& os, StaticString<Char, c...>);}
+		{template <typename Char, Char... c> std::basic_ostream<Char>& operator<<(std::basic_ostream<Char>& os, StaticString<Char, c...>);}
 	inline namespace literals
 		{template <typename Char, Char... c> consteval StaticString<Char, c...> operator""_ss();}
 
@@ -63,15 +63,15 @@ namespace mirism
 	template <typename Char, std::size_t N> struct FixedString
 	{
 		Char data[N];
-		constexpr FixedString(const Char str[N]);
+		constexpr FixedString(const Char (&str)[N]);
 		constexpr std::basic_string_view<Char> string_view() const&;
 		constexpr auto string_view() const&& = delete;
 		constexpr std::size_t size() const;
 	};
 	inline namespace stream_operators
 	{
-		template <typename Char, std::size_t N> std::ostream& operator<<
-			(std::ostream& os, const FixedString<Char, N>& str);
+		template <typename Char, std::size_t N> std::basic_ostream<Char>& operator<<
+			(std::basic_ostream<Char>& os, const FixedString<Char, N>& str);
 	}
 	inline namespace literals
 		{template <FixedString FS> constexpr decltype(FS) operator""_fs();}

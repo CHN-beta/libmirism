@@ -13,12 +13,12 @@ namespace mirism
 
 		// All the content in EndPoint, Request and Response should be legal (e.g. Host only contains legal characters,
 		// and so on).
-		public: enum class Scheme {Http, Https};
+		public: enum class HttpScheme {Http, Https};
 		public: enum class HttpVersion {v1_0, v1_1, v2, v3};
 		public: enum class HttpMethod {Get, Head, Post, Put, Delete, Connect, Options, Trace, Patch};
 		public: struct Request
 		{
-			std::optional<Scheme> Scheme;
+			std::optional<HttpScheme> Scheme;
 			std::optional<HttpVersion> Version;
 			HttpMethod Method;
 			std::optional<std::string> Domain;
@@ -75,7 +75,7 @@ namespace mirism
 		public: Instance& set_server(std::shared_ptr<server::Base> server = nullptr);
 		public: Instance& set_handler(std::shared_ptr<handler::Base> handler = nullptr);
 		public: Instance& set_client(std::shared_ptr<client::Base> client = nullptr);
-		protected: template <auto Instance::* Member, auto Name> [[gnu::always_inline]] auto get_() const;
+		protected: template <auto Instance::* Member, FixedString Name> [[gnu::always_inline]] auto get_() const;
 		public: std::shared_ptr<server::Base> get_server() const;
 		public: std::shared_ptr<handler::Base> get_handler() const;
 		public: std::shared_ptr<client::Base> get_client() const;

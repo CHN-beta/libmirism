@@ -1,5 +1,4 @@
-# include <mirism/common.impl.hpp>
-# include <mirism/atomic.impl.hpp>
+# include <mirism/mirism.hpp>
 # include <iostream>
 
 int main()
