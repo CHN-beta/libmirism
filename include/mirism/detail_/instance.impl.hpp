@@ -73,7 +73,7 @@ namespace mirism
 				log.log<Logger::Level::Error>("Shutdown handler is not set. Ignoring request.");
 			else
 			{
-				(**shutdown_handler)();
+				(*shutdown_handler)();
 				*status = Status::Stopped;
 				*shutdown_handler = nullptr;
 			}
@@ -113,9 +113,9 @@ namespace mirism
 
 	inline std::ostream& stream_operators::operator<<(std::ostream& os, const Instance::Request& request)
 	{
-		return os << "{} {} {} {} {} {} {{{} {}}} {{{} {}}} {}"_f
+		return os << "{} {} {} {} {} {{{} {}}} {{{} {}}} {}"_f
 		(
-			request.Version, request.Method, request.Domain, request.Path, request.Headers, request.Body,
+			request.Version, request.Method, request.Path, request.Headers, request.Body,
 			request.Remote.IP, request.Remote.Port, request.Local.IP, request.Local.Port, request.Cancelled
 		);
 	}

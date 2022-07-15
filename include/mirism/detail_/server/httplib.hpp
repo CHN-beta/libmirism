@@ -8,9 +8,11 @@ namespace mirism::server
 	{
 		class HttplibBase : public Base
 		{
-			public: virtual ~HttplibBase() = default;
 			protected: httplib::Server::HandlerWithResponse create_handler_wrap_
-				(std::function<Instance::Response(Instance::Request)> handler);
+			(
+				Instance::HttpScheme scheme, std::experimental::observer_ptr<handler::Base> handler,
+				std::experimental::observer_ptr<client::Base> client
+			);
 		};
 	}
 	template <bool UseTls> class Httplib;
@@ -20,7 +22,11 @@ namespace mirism::server
 		protected: std::string Host_;
 		protected: int Port_;
 		public: Httplib(std::string host, int port);
-		public: void operator()(bool async, std::function<Instance::Response(Instance::Request)> handler) override;
+		public: std::move_only_function<void()> operator()
+		(
+			bool async, std::experimental::observer_ptr<handler::Base> handler,
+			std::experimental::observer_ptr<client::Base> client
+		) override;
 	};
 	template <> class Httplib<true> : public detail_::HttplibBase, public Logger::ObjectMonitor<Httplib<true>>
 	{
@@ -29,6 +35,10 @@ namespace mirism::server
 		protected: int Port_;
 		protected: std::string CertPath_, KeyPath_;
 		public: Httplib(std::string host, int port, std::string cert_path, std::string key_path);
-		public: void operator()(bool async, std::function<Instance::Response(Instance::Request)> handler) override;
+		public: std::move_only_function<void()> operator()
+		(
+			bool async, std::experimental::observer_ptr<handler::Base> handler,
+			std::experimental::observer_ptr<client::Base> client
+		) override;
 	};
 }

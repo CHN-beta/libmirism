@@ -21,7 +21,6 @@ namespace mirism
 			std::optional<HttpScheme> Scheme;
 			std::optional<HttpVersion> Version;
 			HttpMethod Method;
-			std::optional<std::string> Domain;
 			std::string Path;
 			std::multimap<std::string, std::string, CiStringLess> Headers;
 			std::shared_ptr<Pipe> Body;
@@ -54,12 +53,7 @@ namespace mirism
 		protected: Atomic<Status> Status_;
 
 		// Under async mode, notify the server object to stop.
-		public: class ShutdownHandler
-		{
-			public: virtual ~ShutdownHandler() = default;
-			public: virtual void operator()() = 0;
-		};
-		protected: Atomic<std::shared_ptr<ShutdownHandler>> ShutdownHandler_;
+		protected: Atomic<std::move_only_function<void()>> ShutdownHandler_;
 
 		public: Instance
 		(

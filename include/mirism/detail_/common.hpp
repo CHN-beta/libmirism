@@ -38,8 +38,7 @@ namespace mirism
 	template<typename... Ts> std::size_t hash(Ts&&... objs);
 	void unused(auto&&...);
 
-	static_assert(sizeof(unsigned long long) == 8, "unsigned long long is not 8 bytes");
-	using uint128_t = unsigned long long;
+	using uint128_t = __uint128_t;
 
 	inline namespace literals
 	{
@@ -58,6 +57,16 @@ namespace mirism
 		{template <typename Char, Char... c> std::basic_ostream<Char>& operator<<(std::basic_ostream<Char>& os, StaticString<Char, c...>);}
 	inline namespace literals
 		{template <typename Char, Char... c> consteval StaticString<Char, c...> operator""_ss();}
+
+	// template <specialization_of_static_string<char8_t> str> class myclass; // only accept StaticString with char8_t
+	namespace detail_
+	{
+		template <typename C, typename T> struct SpecializationOfStaticStringHelper : std::false_type {};
+		template <typename C, C... c, typename T>
+			struct SpecializationOfStaticStringHelper<C, StaticString<T, c...>> : std::true_type {};
+	}
+	template <typename T, typename C> concept specialization_of_static_string
+		= detail_::SpecializationOfStaticStringHelper<C, T>::value;
 
 	// Store a string in a fixed-size array
 	template <typename Char, std::size_t N> struct FixedString
@@ -124,16 +133,6 @@ namespace mirism
 	// check if an consteval function could be called by the provided arguments
 	template <typename Function, auto... param> concept consteval_invokable
 		= requires() {typename std::type_identity_t<int[(Function()(param...), 1)]>;};
-	
-	// template <specialization_of_static_string<char8_t> str> class myclass; // only accept StaticString with char8_t
-	namespace detail_
-	{
-		template <typename C, typename T> struct SpecializationOfStaticStringHelper : std::false_type {};
-		template <typename C, C... c, typename T>
-			struct SpecializationOfStaticStringHelper<C, StaticString<T, c...>> : std::true_type {};
-	}
-	template <typename T, typename C> concept specialization_of_static_string
-		= detail_::SpecializationOfStaticStringHelper<C, T>::value;
 
 	// Due to the lack of virtual static member function, a member function either cannot be obtained at runtime by
 	// checking vtable or cannot be legally used before constructing an object
