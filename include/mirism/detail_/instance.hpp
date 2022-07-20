@@ -22,7 +22,7 @@ namespace mirism
 			std::optional<HttpVersion> Version;
 			HttpMethod Method;
 			std::string Path;
-			std::multimap<std::string, std::string, CiStringLess> Headers;
+			std::multimap<std::string, std::string, CaseInsensitiveStringLess> Headers;
 			std::shared_ptr<Pipe> Body;
 			struct
 			{
@@ -34,7 +34,7 @@ namespace mirism
 		public: struct Response
 		{
 			std::uint16_t Status;
-			std::multimap<std::string, std::string, CiStringLess> Headers;
+			std::multimap<std::string, std::string, CaseInsensitiveStringLess> Headers;
 			std::shared_ptr<Pipe> Body;
 			struct
 			{

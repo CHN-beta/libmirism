@@ -1,6 +1,6 @@
-add_executable(test_common common.cpp)
-target_link_libraries(test_common libmirism)
-add_test(common test_common)
+add_executable(test_misc_common misc/common.cpp)
+target_link_libraries(test_misc_common libmirism)
+add_test(misc_common test_misc_common)
 
 add_executable(test_atomic atomic.cpp)
 target_link_libraries(test_atomic libmirism)

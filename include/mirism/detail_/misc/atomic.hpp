@@ -1,10 +1,10 @@
 # pragma once
-# include <mirism/detail_/common.hpp>
+# include <mirism/detail_/misc/concepts.hpp>
 
 namespace mirism
 {
 	// Thread safe wrapper of custom class
-	template <not_cvref_type T> class Atomic
+	template <decayed_type T> class Atomic
 	{
 		protected: mutable std::recursive_mutex Mutex_;
 		protected: mutable std::condition_variable_any ConditionVariable_;
