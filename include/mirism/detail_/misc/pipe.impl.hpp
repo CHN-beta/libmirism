@@ -3,7 +3,7 @@
 
 namespace mirism
 {
-	inline Pipe::PushResult Pipe::push(std::variant<std::string, Signal> value)
+	inline bool Pipe::push(std::variant<std::string, Signal> value)
 	{
 		Logger::Guard guard;
 		auto&& lock = Queue_.lock([](auto& queue){return queue.size() < 1024;}, 10s);
@@ -11,12 +11,12 @@ namespace mirism
 		{
 			guard.log<Logger::Level::Debug>("lock successed.");
 			lock.value()->push(std::move(value));
-			return PushResult::Success;
+			return true;
 		}
 		else
 		{
 			guard.log<Logger::Level::Error>("lock failed.");
-			return PushResult::Failure;
+			return false;
 		}
 	}
 	inline std::optional<std::variant<std::string, Pipe::Signal>> Pipe::pop()

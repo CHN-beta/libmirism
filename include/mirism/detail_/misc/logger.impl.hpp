@@ -1,5 +1,6 @@
 # pragma once
 # include <mirism/detail_/misc/logger.hpp>
+# include <mirism/detail_/misc/format.hpp>
 
 namespace mirism
 {

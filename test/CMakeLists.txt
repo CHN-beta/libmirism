@@ -22,13 +22,17 @@ add_executable(test_misc_staticize misc/staticize.cpp)
 target_link_libraries(test_misc_staticize libmirism)
 add_test(misc_staticize test_misc_staticize)
 
-add_executable(test_pipe pipe.cpp)
-target_link_libraries(test_pipe libmirism)
-add_test(pipe test_pipe)
+add_executable(test_misc_logger misc/logger.cpp)
+target_link_libraries(test_misc_logger libmirism)
+add_test(misc_logger test_misc_logger)
 
-add_executable(test_logger logger.cpp)
-target_link_libraries(test_logger libmirism)
-add_test(logger test_logger)
+add_executable(test_misc_pipe misc/pipe.cpp)
+target_link_libraries(test_misc_pipe libmirism)
+add_test(misc_pipe test_misc_pipe)
+
+add_executable(test_client_base client/base.cpp)
+target_link_libraries(test_client_base libmirism)
+add_test(client_base test_client_base)
 
 add_executable(test_instance instance.cpp)
 target_link_libraries(test_instance libmirism)

@@ -3,6 +3,7 @@
 # include <mirism/detail_/server/base.hpp>
 # include <mirism/detail_/client/base.hpp>
 # include <mirism/detail_/handler/base.hpp>
+# include <mirism/detail_/misc/format.hpp>
 
 namespace mirism
 {
