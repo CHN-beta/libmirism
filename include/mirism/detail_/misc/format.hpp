@@ -11,8 +11,6 @@ namespace mirism
 	inline namespace literals
 		{template <typename Char, Char... c> consteval detail_::FormatLiteralHelper<Char, c...> operator""_f();}
 
-	inline namespace stream_operators {template <Enum T> std::ostream& operator<<(std::ostream& os, T value);}
-
 	namespace detail_
 	{
 		template <typename T> concept OptionalWrap
@@ -35,10 +33,21 @@ namespace mirism
 	}
 }
 
-template <mirism::detail_::OptionalWrap Wrap> struct fmt::formatter<Wrap>
-	: mirism::detail_::FormatterReuseProxy<typename mirism::detail_::non_cv_value_type<Wrap>::type>
+namespace fmt
 {
-	template <typename FormatContext> auto format(const Wrap& wrap, FormatContext& ctx)
-		-> std::invoke_result_t<decltype(&FormatContext::out), FormatContext>;
-};
+	template <mirism::detail_::OptionalWrap Wrap> struct formatter<Wrap>
+		: mirism::detail_::FormatterReuseProxy<typename mirism::detail_::non_cv_value_type<Wrap>::type>
+	{
+		template <typename FormatContext> auto format(const Wrap& wrap, FormatContext& ctx)
+			-> std::invoke_result_t<decltype(&FormatContext::out), FormatContext>;
+	};
 
+	template <mirism::enumerable T> struct formatter<T>
+	{
+		bool full = false;
+		constexpr auto parse(fmt::format_parse_context& ctx)
+			-> std::invoke_result_t<decltype(&fmt::format_parse_context::begin), fmt::format_parse_context>;
+		template <typename FormatContext> auto format(const T& value, FormatContext& ctx)
+			-> std::invoke_result_t<decltype(&FormatContext::out), FormatContext>;
+	};
+}

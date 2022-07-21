@@ -66,9 +66,17 @@ namespace mirism
 		Atomic<T>::apply(F&& f) -> decltype(f(Value_)) requires requires() {f(Value_);}
 	{
 		std::scoped_lock lock(Mutex_);
-		auto&& result = f(Value_);
-		ConditionVariable_.notify_all();
-		return std::forward<decltype(f(Value_))>(result);
+		if constexpr (std::same_as<decltype(f(Value_)), void>)
+		{
+			f(Value_);
+			ConditionVariable_.notify_all();
+		}
+		else
+		{
+			auto&& result = f(Value_);
+			ConditionVariable_.notify_all();
+			return std::forward<decltype(f(Value_))>(result);
+		}
 	}
 
 	template <decayed_type T> template <typename F, typename ConditionF> inline
@@ -85,9 +93,17 @@ namespace mirism
 	{
 		std::unique_lock lock(Mutex_);
 		ConditionVariable_.wait(lock, [this, &condition_f]{return condition_f(const_cast<const T&>(Value_));});
-		auto&& result = f(Value_);
-		ConditionVariable_.notify_all();
-		return std::forward<decltype(f(Value_))>(result);
+		if constexpr (std::same_as<decltype(f(Value_)), void>)
+		{
+			f(Value_);
+			ConditionVariable_.notify_all();
+		}
+		else
+		{
+			auto&& result = f(Value_);
+			ConditionVariable_.notify_all();
+			return std::forward<decltype(f(Value_))>(result);
+		}
 	}
 
 	template <decayed_type T> template <typename F, typename ConditionF> inline
@@ -151,14 +167,11 @@ namespace mirism
 		ConditionVariable_.wait(lock, [this, &condition_f]{return condition_f(Value_);});
 	}
 	template <decayed_type T> template <typename ConditionF> inline
-		Atomic<T>::WaitResult Atomic<T>::wait(ConditionF&& condition_f, std::chrono::steady_clock::duration timeout) const
+		bool Atomic<T>::wait(ConditionF&& condition_f, std::chrono::steady_clock::duration timeout) const
 		requires requires(){{condition_f(Value_)} -> convertible_to<bool>;}
 	{
 		std::unique_lock lock(Mutex_);
-		if (ConditionVariable_.wait_for(lock, timeout, [this, &condition_f]{return condition_f(Value_);}))
-			return WaitResult::Success;
-		else
-			return WaitResult::Timeout;
+		return ConditionVariable_.wait_for(lock, timeout, [this, &condition_f]{return condition_f(Value_);});
 	}
 
 	template <decayed_type T> template <bool Const> inline

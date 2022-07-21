@@ -54,11 +54,10 @@ namespace mirism
 			requires requires(){f(Value_); {condition_f(std::declval<const T&>())} -> convertible_to<bool>;};
 
 		// Wait until condition funciton returns true, with an optional timeout
-		public: enum class WaitResult {Success, Timeout};
 		public: template <typename ConditionF> void wait(ConditionF&& condition_f) const
 			requires requires(){{condition_f(Value_)} -> convertible_to<bool>;};
 		public: template <typename ConditionF>
-			WaitResult wait(ConditionF&& condition_f, std::chrono::steady_clock::duration timeout) const
+			bool wait(ConditionF&& condition_f, std::chrono::steady_clock::duration timeout) const
 			requires requires(){{condition_f(Value_)} -> convertible_to<bool>;};
 
 		// Attain lock from outside when constructing, and release when destructing.

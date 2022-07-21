@@ -49,7 +49,7 @@ namespace mirism
 		std::regex operator""_re(const char* str, std::size_t len);
 	}
 
-	inline namespace stream_operators {using namespace magic_enum::istream_operators;}
+	inline namespace stream_operators {using namespace magic_enum::iostream_operators;}
 
 	struct CaseInsensitiveStringLess
 		{template <typename T> constexpr bool operator()(const T& lhs, const T& rhs) const;};

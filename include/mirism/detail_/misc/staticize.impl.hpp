@@ -10,8 +10,10 @@ namespace mirism
 		{
 # pragma GCC diagnostic push
 # pragma GCC diagnostic ignored "-Wpmf-conversions"
-			return static_function_type(F)(reinterpret_cast<const T*>(NULL), std::forward<Params>(ps)...);
+			return function_type(F)(reinterpret_cast<const T*>(NULL), std::forward<Params>(ps)...);
 # pragma GCC diagnostic pop
 		};
 	}
+	template <auto F> inline auto staticize() -> typename detail_::StaticizeHelper<decltype(F)>::static_function_type
+		{return detail_::StaticizeHelper<decltype(F)>::template staticize<F>();}
 }

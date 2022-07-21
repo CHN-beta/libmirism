@@ -34,5 +34,5 @@ namespace mirism
 	template <typename Function, auto... param> concept consteval_invokable
 		= requires() {typename std::type_identity_t<int[(Function()(param...), 1)]>;};
 
-	template <typename T> concept Enum = std::is_enum_v<T>;
+	template <typename T> concept enumerable = std::is_enum_v<T>;
 }
