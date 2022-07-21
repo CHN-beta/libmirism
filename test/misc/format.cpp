@@ -12,6 +12,10 @@ int main()
 	// use `operator""_f` to call fmt::format
 	auto str = "{} {}"_f("hello", "world");
 
+	// std::varant could be formatted as well
+	auto var = std::variant<int, std::string>{1};
+	std::cout << var;
+
 	// use stream operator or format to print and read enum
 	enum class Color {Red, Green, Blue};
 	auto color = Color::Red;

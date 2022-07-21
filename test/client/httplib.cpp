@@ -9,6 +9,7 @@
 # include <mirism/detail_/client/httplib.impl.hpp>
 
 using namespace mirism::literals;
+using namespace mirism::stream_operators;
 
 int main()
 {

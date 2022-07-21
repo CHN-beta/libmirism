@@ -3,6 +3,19 @@
 
 namespace mirism
 {
+	template <typename T, typename Char> concept formattable
+		= !
+		(
+			std::is_pointer_v<T>
+			&& !std::same_as<std::remove_cvref_t<std::remove_pointer_t<T>>, void>
+			&& !std::same_as<std::remove_reference_t<std::remove_const_t<std::remove_pointer_t<T>>>, Char>
+		) &&
+		(
+			std::default_initializable<fmt::formatter<T>>
+			|| requires(std::basic_ostream<Char>& os, const T& val)
+				{{os << val} -> std::same_as<std::basic_ostream<Char>&>;}
+		);
+
 	namespace detail_
 	{
 		template <typename Char, Char... c> struct FormatLiteralHelper : protected StaticString<Char, c...>
@@ -10,6 +23,12 @@ namespace mirism
 	}
 	inline namespace literals
 		{template <typename Char, Char... c> consteval detail_::FormatLiteralHelper<Char, c...> operator""_f();}
+
+	inline namespace stream_operators
+	{
+		template <typename Char, typename... Ts> requires (sizeof...(Ts) > 0) std::basic_ostream<Char>& operator<<
+			(std::basic_ostream<Char>& os, const std::variant<Ts...>& value);
+	}
 
 	namespace detail_
 	{

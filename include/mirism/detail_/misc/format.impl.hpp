@@ -10,6 +10,23 @@ namespace mirism
 		detail_::FormatLiteralHelper<Char, c...> literals::operator""_f()
 		{return {};}
 
+	template <typename Char, typename... Ts> requires (sizeof...(Ts) > 0) inline
+		std::basic_ostream<Char>& stream_operators::operator<<(std::basic_ostream<Char>& os, const std::variant<Ts...>& value)
+	{
+		auto try_print = [&]<typename T>()
+		{
+			if (std::holds_alternative<T>(value))
+			{
+				if constexpr (formattable<T, Char>)
+					os << "({}: {})"_f(nameof::nameof_full_type<T>(), std::get<T>(value));
+				else
+					os << "({}: {})"_f(nameof::nameof_full_type<T>(), "non-null unformattable value");
+			}
+		};
+		(try_print.template operator()<Ts>(), ...);
+		return os;
+	}
+
 	template <typename T> inline constexpr
 		auto detail_::FormatterReuseProxy<T>::parse(fmt::format_parse_context& ctx)
 		-> std::invoke_result_t<decltype(&fmt::format_parse_context::begin), fmt::format_parse_context>
@@ -36,29 +53,12 @@ namespace fmt
 		using char_type = typename FormatContext::char_type;
 		auto format_value_type = [&, this](const value_t& value)
 		{
-			// Any pointer could be print by std::ostream, but fmt consider pointer is not formattable except [cv-]void*
-			// (print address) and [c-]Char* (print string).
-			// We obey fmt's rule, that is, consider pointers as unformattable other than [cv-]void* and [c-]Char*.
-			if constexpr
-			(
-				std::is_pointer_v<value_t>
-					&& !std::same_as<std::remove_cvref_t<std::remove_pointer_t<value_t>>, void>
-					&& !std::same_as
-						<std::remove_reference_t<std::remove_const_t<std::remove_pointer_t<value_t>>>, char_type>
-			)
+			if constexpr (!mirism::formattable<value_t, char_type>)
 				return format_to(ctx.out(), "non-null unformattable value");
 			else if constexpr (std::default_initializable<formatter<value_t>>)
 				mirism::detail_::FormatterReuseProxy<value_t>::format(value, ctx);
-			else if constexpr
-			(
-				requires(std::basic_ostream<char_type>& os, const value_t& val)
-				{
-					{os << val} -> std::same_as<std::basic_ostream<char_type>&>;
-				}
-			)
-				format_to(ctx.out(), "{}", value);
 			else
-				format_to(ctx.out(), "non-null unformattable value");
+				format_to(ctx.out(), "{}", value);
 		};
 		format_to(ctx.out(), "(");
 		if constexpr (mirism::specialization_of<Wrap, std::optional>)
