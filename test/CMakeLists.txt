@@ -34,6 +34,10 @@ add_executable(test_client_base client/base.cpp)
 target_link_libraries(test_client_base libmirism)
 add_test(client_base test_client_base)
 
+add_executable(test_client_httplib client/httplib.cpp)
+target_link_libraries(test_client_httplib libmirism)
+add_test(client_httplib test_client_httplib)
+
 add_executable(test_instance instance.cpp)
 target_link_libraries(test_instance libmirism)
 add_test(instance test_instance)

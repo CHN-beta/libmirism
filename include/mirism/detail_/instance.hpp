@@ -16,7 +16,7 @@ namespace mirism
 		// and so on).
 		public: enum class HttpScheme {Http, Https};
 		public: enum class HttpVersion {v1_0, v1_1, v2, v3};
-		public: enum class HttpMethod {Get, Head, Post, Put, Delete, Connect, Options, Trace, Patch};
+		public: enum class HttpMethod {Connect, Delete, Get, Head, Options, Patch, Post, Put, Trace};
 		public: struct Request
 		{
 			std::optional<HttpScheme> Scheme;
