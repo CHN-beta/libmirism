@@ -18,7 +18,7 @@ namespace mirism
 
 	namespace detail_
 	{
-		template <typename Char, Char... c> struct FormatLiteralHelper : protected StaticString<Char, c...>
+		template <typename Char, Char... c> struct FormatLiteralHelper : protected BasicStaticString<Char, c...>
 			{template <typename... Param> std::basic_string<Char> operator()(Param&&... param) const;};
 	}
 	inline namespace literals

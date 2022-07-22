@@ -5,7 +5,7 @@ namespace mirism
 {
 	template <typename Char, Char... c> template <typename... Param> inline
 		std::basic_string<Char> detail_::FormatLiteralHelper<Char, c...>::operator() (Param&&... param) const
-		{return fmt::format(StaticString<Char, c...>::StringView, std::forward<Param>(param)...);}
+		{return fmt::format(BasicStaticString<Char, c...>::StringView, std::forward<Param>(param)...);}
 	template <typename Char, Char... c> consteval inline
 		detail_::FormatLiteralHelper<Char, c...> literals::operator""_f()
 		{return {};}
