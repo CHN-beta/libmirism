@@ -3,7 +3,7 @@ project(libmirism)
 enable_testing()
 include(GNUInstallDirs)
 
-find_package(fmt REQUIRED)
+find_package(fmt 8 REQUIRED)
 
 find_path(NAMEOF_INCLUDE_DIR nameof.hpp REQUIRED)
 

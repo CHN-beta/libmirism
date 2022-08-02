@@ -36,13 +36,11 @@ namespace mirism
 	// Store a string in a fixed-size array
 	template <decayed_type Char, std::size_t N> requires std::same_as<Char, std::decay_t<Char>> struct BasicFixedString
 	{
-		Char data[N];
+		Char Data[N];
+		constexpr static const std::size_t Size = N - 1;
 		constexpr BasicFixedString(const Char (&str)[N]);
-		constexpr std::basic_string_view<Char> string_view() const&;
-		constexpr auto string_view() const&& = delete;
-		constexpr std::size_t size() const;
 	};
-	template <char... c> using FixedString = BasicFixedString<char, sizeof...(c)>;
+	template <std::size_t N> using FixedString = BasicFixedString<char, N>;
 	inline namespace stream_operators
 	{
 		template <typename Char, std::size_t N> std::basic_ostream<Char>& operator<<
@@ -64,5 +62,36 @@ namespace mirism
 	template <typename T, typename C = void> concept specialization_of_basic_fixed_string
 		= detail_::specialization_of_basic_fixed_string<T, C>
 			&& detail_::specialization_of_basic_fixed_string<T, void>;
-	template <typename T> concept specialization_of_fixed_string = specialization_of_basic_fixed_string<T, char>; 
+	template <typename T> concept specialization_of_fixed_string = specialization_of_basic_fixed_string<T, char>;
+
+	// Store a string with at most N characters
+	template <decayed_type Char, std::size_t N> requires std::same_as<Char, std::decay_t<Char>>
+		struct BasicVariableString
+	{
+		Char Data[N];
+		std::size_t Size;
+		constexpr static const std::size_t MaxSize = N - 1;
+		template <std::size_t M> requires (M<=N) constexpr BasicVariableString(const Char (&str)[M]);
+	};
+	template <std::size_t N> using VariableString = BasicVariableString<char, N>;
+	inline namespace stream_operators
+	{
+		template <typename Char, std::size_t N> std::basic_ostream<Char>& operator<<
+			(std::basic_ostream<Char>& os, const BasicVariableString<Char, N>& str);
+	}
+
+	namespace detail_
+	{
+		template <typename C, typename T> struct SpecializationOfBasicVariableStringHelper : std::false_type {};
+		template <typename C, std::size_t N>
+			struct SpecializationOfBasicVariableStringHelper<C, BasicVariableString<C, N>> : std::true_type {};
+		template <typename C, std::size_t N>
+			struct SpecializationOfBasicVariableStringHelper<void, BasicVariableString<C, N>> : std::true_type {};
+		template <typename T, typename C> concept specialization_of_basic_variable_string
+			= SpecializationOfBasicVariableStringHelper<std::decay_t<C>, std::decay_t<T>>::value;
+	}
+	template <typename T, typename C = void> concept specialization_of_basic_variable_string
+		= detail_::specialization_of_basic_variable_string<T, C>
+			&& detail_::specialization_of_basic_variable_string<T, void>;
+	template <typename T> concept specialization_of_variable_string = specialization_of_basic_variable_string<T, char>;
 }

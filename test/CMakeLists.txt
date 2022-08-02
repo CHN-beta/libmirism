@@ -38,6 +38,18 @@ add_executable(test_client_httplib client/httplib.cpp)
 target_link_libraries(test_client_httplib libmirism)
 add_test(client_httplib test_client_httplib)
 
+add_executable(test_content_base content/base.cpp)
+target_link_libraries(test_content_base libmirism)
+add_test(content_base test_content_base)
+
+add_executable(test_content_binary content/binary.cpp)
+target_link_libraries(test_content_binary libmirism)
+add_test(content_binary test_content_binary)
+
+add_executable(test_content_text_base content/text/base.cpp)
+target_link_libraries(test_content_text_base libmirism)
+add_test(content_text_base test_content_text_base)
+
 add_executable(test_instance instance.cpp)
 target_link_libraries(test_instance libmirism)
 add_test(instance test_instance)

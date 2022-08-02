@@ -10,23 +10,6 @@ namespace mirism
 		detail_::FormatLiteralHelper<Char, c...> literals::operator""_f()
 		{return {};}
 
-	template <typename Char, typename... Ts> requires (sizeof...(Ts) > 0) inline
-		std::basic_ostream<Char>& stream_operators::operator<<(std::basic_ostream<Char>& os, const std::variant<Ts...>& value)
-	{
-		auto try_print = [&]<typename T>()
-		{
-			if (std::holds_alternative<T>(value))
-			{
-				if constexpr (formattable<T, Char>)
-					os << "({}: {})"_f(nameof::nameof_full_type<T>(), std::get<T>(value));
-				else
-					os << "({}: {})"_f(nameof::nameof_full_type<T>(), "non-null unformattable value");
-			}
-		};
-		(try_print.template operator()<Ts>(), ...);
-		return os;
-	}
-
 	template <typename T> inline constexpr
 		auto detail_::FormatterReuseProxy<T>::parse(fmt::format_parse_context& ctx)
 		-> std::invoke_result_t<decltype(&fmt::format_parse_context::begin), fmt::format_parse_context>
@@ -41,19 +24,39 @@ namespace mirism
 	}
 }
 
+namespace std
+{
+	template <typename Char, typename... Ts> requires (sizeof...(Ts) > 0) inline
+		basic_ostream<Char>& operator<<(basic_ostream<Char>& os, const variant<Ts...>& value)
+	{
+		using namespace mirism::literals;
+		auto try_print = [&]<typename T>()
+		{
+			if (holds_alternative<T>(value))
+			{
+				if constexpr (mirism::formattable<T, Char>)
+					os << "({}: {})"_f(nameof::nameof_full_type<T>(), get<T>(value));
+				else
+					os << "({}: {})"_f(nameof::nameof_full_type<T>(), "non-null unformattable value");
+			}
+		};
+		(try_print.template operator()<Ts>(), ...);
+		return os;
+	}
+}
+
 namespace fmt
 {
-	template <mirism::detail_::OptionalWrap Wrap> template <typename FormatContext> inline
-		auto formatter<Wrap>::format(const Wrap& wrap, FormatContext& ctx)
+	template <typename Char, mirism::detail_::OptionalWrap Wrap> template <typename FormatContext> inline
+		auto formatter<Wrap, Char>::format(const Wrap& wrap, FormatContext& ctx)
 		-> std::invoke_result_t<decltype(&FormatContext::out), FormatContext>
 	{
 		using namespace mirism::literals;
 		using namespace mirism::stream_operators;
 		using value_t = typename mirism::detail_::non_cv_value_type<Wrap>::type;
-		using char_type = typename FormatContext::char_type;
 		auto format_value_type = [&, this](const value_t& value)
 		{
-			if constexpr (!mirism::formattable<value_t, char_type>)
+			if constexpr (!mirism::formattable<value_t, Char>)
 				return format_to(ctx.out(), "non-null unformattable value");
 			else if constexpr (std::default_initializable<formatter<value_t>>)
 				mirism::detail_::FormatterReuseProxy<value_t>::format(value, ctx);
@@ -91,8 +94,8 @@ namespace fmt
 		return format_to(ctx.out(), ")");
 	}
 
-	template <mirism::enumerable T> inline constexpr
-		auto formatter<T>::parse(format_parse_context& ctx)
+	template <typename Char, mirism::enumerable T> inline constexpr
+		auto formatter<T, Char>::parse(format_parse_context& ctx)
 		-> std::invoke_result_t<decltype(&format_parse_context::begin), format_parse_context>
 	{
 		auto it = ctx.begin();
@@ -106,8 +109,8 @@ namespace fmt
 		return it;
 	}
 
-	template <mirism::enumerable T> template <typename FormatContext> inline
-		auto formatter<T>::format(const T& value, FormatContext& ctx)
+	template <typename Char, mirism::enumerable T> template <typename FormatContext> inline
+		auto formatter<T, Char>::format(const T& value, FormatContext& ctx)
 		-> std::invoke_result_t<decltype(&FormatContext::out), FormatContext>
 	{
 		if (full)

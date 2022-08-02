@@ -14,7 +14,7 @@ int main()
 
 	// std::varant could be formatted as well
 	auto var = std::variant<int, std::string>{1};
-	std::cout << var;
+	std::cout << "{}\n"_f(var);
 
 	// use stream operator or format to print and read enum
 	enum class Color {Red, Green, Blue};

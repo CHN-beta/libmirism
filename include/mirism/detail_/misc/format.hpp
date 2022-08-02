@@ -3,18 +3,7 @@
 
 namespace mirism
 {
-	template <typename T, typename Char> concept formattable
-		= !
-		(
-			std::is_pointer_v<T>
-			&& !std::same_as<std::remove_cvref_t<std::remove_pointer_t<T>>, void>
-			&& !std::same_as<std::remove_reference_t<std::remove_const_t<std::remove_pointer_t<T>>>, Char>
-		) &&
-		(
-			std::default_initializable<fmt::formatter<T>>
-			|| requires(std::basic_ostream<Char>& os, const T& val)
-				{{os << val} -> std::same_as<std::basic_ostream<Char>&>;}
-		);
+	template <typename T, typename Char = char> concept formattable = fmt::is_formattable<T, Char>::value;
 
 	namespace detail_
 	{
@@ -23,12 +12,6 @@ namespace mirism
 	}
 	inline namespace literals
 		{template <typename Char, Char... c> consteval detail_::FormatLiteralHelper<Char, c...> operator""_f();}
-
-	inline namespace stream_operators
-	{
-		template <typename Char, typename... Ts> requires (sizeof...(Ts) > 0) std::basic_ostream<Char>& operator<<
-			(std::basic_ostream<Char>& os, const std::variant<Ts...>& value);
-	}
 
 	namespace detail_
 	{
@@ -52,16 +35,24 @@ namespace mirism
 	}
 }
 
+namespace std
+{
+	template <typename Char, typename... Ts> requires (sizeof...(Ts) > 0) basic_ostream<Char>& operator<<
+		(basic_ostream<Char>& os, const variant<Ts...>& value);
+}
+
 namespace fmt
 {
-	template <mirism::detail_::OptionalWrap Wrap> struct formatter<Wrap>
+	using namespace mirism::stream_operators;
+
+	template <typename Char, mirism::detail_::OptionalWrap Wrap> struct formatter<Wrap, Char>
 		: mirism::detail_::FormatterReuseProxy<typename mirism::detail_::non_cv_value_type<Wrap>::type>
 	{
 		template <typename FormatContext> auto format(const Wrap& wrap, FormatContext& ctx)
 			-> std::invoke_result_t<decltype(&FormatContext::out), FormatContext>;
 	};
 
-	template <mirism::enumerable T> struct formatter<T>
+	template <typename Char, mirism::enumerable T> struct formatter<T, Char>
 	{
 		bool full = false;
 		constexpr auto parse(fmt::format_parse_context& ctx)
@@ -69,4 +60,7 @@ namespace fmt
 		template <typename FormatContext> auto format(const T& value, FormatContext& ctx)
 			-> std::invoke_result_t<decltype(&FormatContext::out), FormatContext>;
 	};
+
+	template <typename Char, typename... Ts> struct formatter<std::variant<Ts...>, Char>
+		: basic_ostream_formatter<Char> {};
 }

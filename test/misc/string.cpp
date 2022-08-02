@@ -47,7 +47,22 @@ void test_basic_fixed_string()
 	static_assert(mirism::specialization_of_basic_fixed_string<decltype("hello"_fs), char>, "failed");
 }
 
+// a `BasicVariableString` is in a similar way to `BasicFixedString`, but with a variable size, at most N.
+template <mirism::BasicVariableString<char, 16> S> struct TestBasicVariableString	// accept at most 16 characters
+{
+	TestBasicVariableString()
+	{
+		std::cout << "hi, you created " << S << std::endl;
+	}
+};
+void test_basic_variable_string()
+{
+	// same as TestBasicVariableString<"hello"_fs> a, b, c;
+	TestBasicVariableString<"hello"> a, b, c;	// wow, c++ now supports string as template parameter!
+}
+
 int main()
 {
 	test_basic_fixed_string();
+	test_basic_variable_string();
 }

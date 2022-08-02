@@ -7,6 +7,8 @@ namespace mirism::handler
 	class Base
 	{
 		public: virtual ~Base() = default;
+
+		// ask the handler to handle one request.
 		public: virtual std::unique_ptr<Instance::Response> operator()
 		(
 			std::unique_ptr<Instance::Request> request = nullptr,
