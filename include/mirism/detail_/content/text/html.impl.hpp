@@ -56,7 +56,7 @@ namespace mirism::content::text
 			for (auto word : read_one_word(document_serialized))
 			{
 				if (status_stack.empty()) [[unlikely]]
-					throw std::runtime_error("status stack is empty");
+					throw std::runtime_error{"status stack is empty"};
 				else if (status_stack.back() == waiting_for_doctype)
 				{
 					if (std::set<std::string>{" ", "\t", "\n", "\r"}.contains(word))
@@ -64,7 +64,7 @@ namespace mirism::content::text
 					else if (word == "<")
 						status_stack.back() = waiting_for_doctype_name;
 					else
-						throw std::runtime_error("expected \"<\", get \"{}\""_f(word));
+						throw std::runtime_error{"expected \"<\", get \"{}\""_f(word)};
 				}
 				else if (status_stack.back() == waiting_for_doctype_name)
 				{
@@ -73,7 +73,7 @@ namespace mirism::content::text
 					else if (lowwer_case(word) == "!doctype")
 						status_stack.back() = waiting_for_doctype_attribute;
 					else
-						throw std::runtime_error("expected \"!doctype\", get \"{}\""_f(word));
+						throw std::runtime_error{"expected \"!doctype\", get \"{}\""_f(word)};
 				}
 				else if (status_stack.back() == waiting_for_doctype_attribute)
 				{
@@ -91,21 +91,21 @@ namespace mirism::content::text
 					else if (word == "<")
 						status_stack.push_back(waiting_for_tag_name);
 					else
-						throw std::runtime_error("expected \"<\", get \"{}\""_f(word));
+						throw std::runtime_error{"expected \"<\", get \"{}\""_f(word)};
 				}
 				else if (status_stack.back() == waiting_for_tag_name)
 				{
 					if (std::set<std::string>{" ", "\t", "\n", "\r"}.contains(word))
 						continue;
 					else if (std::set<std::string>{"=", "\"", "<", ">"}.contains(word))
-						throw std::runtime_error("expected tag name, get \"{}\""_f(word));
+						throw std::runtime_error{"expected tag name, get \"{}\""_f(word)};
 					else if (word == "/")
 						status_stack.back() = waiting_for_tag_pair_name;
 					else
 					{
 						auto tag_name = lowwer_case(word);
 						if (!known_tags.contains(tag_name))
-							throw std::runtime_error("unknown tag \"{}\""_f(word));
+							throw std::runtime_error{"unknown tag \"{}\""_f(word)};
 						else if (current_node)
 						{
 							current_node->Children.emplace_back(Node{.Tag = tag_name, .Parent = current_node});
@@ -124,11 +124,11 @@ namespace mirism::content::text
 					if (std::set<std::string>{" ", "\t", "\n", "\r"}.contains(word))
 						continue;
 					else if (std::set<std::string>{, "\"", "<"}.contains(word))
-						throw std::runtime_error("expected tag attribute name, get \"{}\""_f(word));
+						throw std::runtime_error{"expected tag attribute name, get \"{}\""_f(word)};
 					else if (word == "=")
 					{
 						if (current_node->Attributes.empty())
-							throw std::runtime_error("get \"=\" but do not fond attribute name");
+							throw std::runtime_error{"get \"=\" but do not fond attribute name"};
 						else
 							status_stack.back() = waiting_for_tag_attribute_value;
 					}
@@ -156,7 +156,7 @@ namespace mirism::content::text
 					if (std::set<std::string>{" ", "\t", "\n", "\r"}.contains(word))
 						continue;
 					else if (std::set<std::string>{"=", "<", ">", "/"}.contains(word))
-						throw std::runtime_error("expected tag attribute value, get \"{}\""_f(word));
+						throw std::runtime_error{"expected tag attribute value, get \"{}\""_f(word)};
 					else if (word == "\"")
 					{
 						current_node->Attributes.back().Value = "";
@@ -182,7 +182,7 @@ namespace mirism::content::text
 					}
 						status_stack.back() = waiting_for_tag;
 					else
-						throw std::runtime_error("expected \">\", get \"{}\""_f(word));
+						throw std::runtime_error{"expected \">\", get \"{}\""_f(word)};
 				}
 								else if (status_stack.back() == waiting_for_tag_or_text)
 				{
@@ -217,7 +217,7 @@ namespace mirism::content::text
 								current_node->Children.emplace_back(word);
 						}
 						else
-							throw std::runtime_error("text in root is not allowed.");
+							throw std::runtime_error{"text in root is not allowed."};
 					}
 				}
 			}

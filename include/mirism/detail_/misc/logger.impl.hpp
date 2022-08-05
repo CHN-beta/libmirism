@@ -16,16 +16,16 @@ namespace mirism
 	{
 		if (auto&& lock = TelegramConfig_.lock(); *lock)
 		{
-			TgBot::Bot bot(lock.value()->first);
+			TgBot::Bot bot{lock.value()->first};
 			bot.getApi().sendMessage(lock.value()->first, message);
 		}
 	}
 	inline void Logger::telegram_notify_async(const std::string& message)
-		{std::thread(Logger::telegram_notify, message).detach();}
+		{std::thread{Logger::telegram_notify, message}.detach();}
 
 	inline Atomic<std::multimap<const void*, std::string_view>> Logger::Objects;
 	template <typename T> inline Logger::ObjectMonitor<T>::ObjectMonitor()
-	:	CreateTime_(std::chrono::steady_clock::now())
+	:	CreateTime_{std::chrono::steady_clock::now()}
 	{
 		Guard guard;
 		guard.log<Level::Debug>("create {} at {}."_f(nameof::nameof_full_type<T>(), fmt::ptr(this)));
@@ -54,11 +54,11 @@ namespace mirism
 	inline Atomic<std::map<std::size_t, std::size_t>> Logger::Threads;
 	inline thread_local unsigned Logger::Guard::Indent_ = 0;
 	template <typename... Param> inline Logger::Guard::Guard(Param&&... param)
-	:	StartTime_(std::chrono::steady_clock::now())
+	:	StartTime_{std::chrono::steady_clock::now()}
 	{
 		Indent_++;
 		auto&& lock = Threads.lock();
-		auto thread_id = std::hash<std::thread::id>()(std::this_thread::get_id());
+		auto thread_id = std::hash<std::thread::id>{}(std::this_thread::get_id());
 		if (lock->contains(thread_id))
 			lock.value()[thread_id]++;
 		else
@@ -83,7 +83,7 @@ namespace mirism
 			(std::chrono::steady_clock::now() - StartTime_).count()));
 		Indent_--;
 		auto&& lock = Threads.lock();
-		auto thread_id = std::hash<std::thread::id>()(std::this_thread::get_id());
+		auto thread_id = std::hash<std::thread::id>{}(std::this_thread::get_id());
 		if (lock->contains(thread_id))
 		{
 			lock.value()[thread_id]--;
@@ -92,7 +92,7 @@ namespace mirism
 		}
 		else [[unlikely]]
 			log<Level::Debug>("{:08x} not found in Logger::Threads."_f
-				(std::hash<std::thread::id>()(std::this_thread::get_id()) % std::numeric_limits<std::uint64_t>::max()));
+				(std::hash<std::thread::id>{}(std::this_thread::get_id()) % std::numeric_limits<std::uint64_t>::max()));
 	}
 	inline void Logger::Guard::operator()() const
 	{
@@ -121,7 +121,7 @@ namespace mirism
 			(
 				time,
 				std::chrono::time_point_cast<std::chrono::milliseconds>(time).time_since_epoch().count() % 1000,
-				std::hash<std::thread::id>()(std::this_thread::get_id())
+				std::hash<std::thread::id>{}(std::this_thread::get_id())
 					% std::numeric_limits<std::uint64_t>::max(),
 				Indent_,
 				stack[0].source_file().empty() ? "??"s :

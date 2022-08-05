@@ -30,7 +30,7 @@ namespace std
 		basic_ostream<Char>& operator<<(basic_ostream<Char>& os, const variant<Ts...>& value)
 	{
 		using namespace mirism::literals;
-		auto try_print = [&]<typename T>()
+		auto try_print = [&]<typename T>
 		{
 			if (holds_alternative<T>(value))
 			{
@@ -105,7 +105,7 @@ namespace fmt
 			it++;
 		}
 		if (it != ctx.end() && *it != '}')
-			throw format_error("syntax error.");
+			throw format_error{"syntax error."};
 		return it;
 	}
 

@@ -4,38 +4,38 @@
 namespace mirism
 {
 	template <decayed_type T> inline Atomic<T>::Atomic(const T& value)
-		: Value_(value) {}
+		: Value_{value} {}
 	template <decayed_type T> inline Atomic<T>::Atomic(T&& value)
-		: Value_(std::move(value)) {}
+		: Value_{std::move(value)} {}
 	template <decayed_type T> inline Atomic<T>::Atomic(const Atomic& other)
-		: Value_(other.get()) {}
+		: Value_{other.get()} {}
 	template <decayed_type T> inline Atomic<T>::Atomic(Atomic&& other)
-		: Value_(std::move(other).get()) {}
+		: Value_{std::move(other).get()} {}
 
 	template <decayed_type T> inline Atomic<T>& Atomic<T>::operator=(const T& other)
 	{
-		std::scoped_lock lock(Mutex_);
+		std::scoped_lock lock{Mutex_};
 		Value_ = other;
 		ConditionVariable_.notify_all();
 		return *this;
 	}
 	template <decayed_type T> inline Atomic<T>& Atomic<T>::operator=(T&& other)
 	{
-		std::scoped_lock lock(Mutex_);
+		std::scoped_lock lock{Mutex_};
 		Value_ = std::move(other);
 		ConditionVariable_.notify_all();
 		return *this;
 	}
 	template <decayed_type T> inline Atomic<T>& Atomic<T>::operator=(const Atomic& other)
 	{
-		std::scoped_lock lock(Mutex_, other.Mutex_);
+		std::scoped_lock lock{Mutex_, other.Mutex_};
 		Value_ = other.Value_;
 		ConditionVariable_.notify_all();
 		return *this;
 	}
 	template <decayed_type T> inline Atomic<T>& Atomic<T>::operator=(Atomic&& other)
 	{
-		std::scoped_lock lock(Mutex_, other.Mutex_);
+		std::scoped_lock lock{Mutex_, other.Mutex_};
 		Value_ = std::move(other.Value_);
 		ConditionVariable_.notify_all();
 		return *this;
@@ -43,12 +43,12 @@ namespace mirism
 
 	template <decayed_type T> inline T Atomic<T>::get() const&
 	{
-		std::scoped_lock lock(Mutex_);
+		std::scoped_lock lock{Mutex_};
 		return Value_;
 	}
 	template <decayed_type T> inline T Atomic<T>::get() &&
 	{
-		std::scoped_lock lock(Mutex_);
+		std::scoped_lock lock{Mutex_};
 		return std::move(Value_);
 	}
 	template <decayed_type T> inline Atomic<T>::operator T() const&
@@ -59,13 +59,13 @@ namespace mirism
 	template <decayed_type T> template <typename F> inline auto
 		Atomic<T>::apply(F&& f) const -> decltype(f(Value_)) requires requires() {f(Value_);}
 	{
-		std::scoped_lock lock(Mutex_);
+		std::scoped_lock lock{Mutex_};
 		return f(Value_);
 	}
 	template <decayed_type T> template <typename F> inline auto
 		Atomic<T>::apply(F&& f) -> decltype(f(Value_)) requires requires() {f(Value_);}
 	{
-		std::scoped_lock lock(Mutex_);
+		std::scoped_lock lock{Mutex_};
 		if constexpr (std::same_as<decltype(f(Value_)), void>)
 		{
 			f(Value_);
@@ -81,17 +81,17 @@ namespace mirism
 
 	template <decayed_type T> template <typename F, typename ConditionF> inline
 		auto Atomic<T>::apply(F&& f, ConditionF&& condition_f) const -> decltype(f(Value_))
-		requires requires(){f(Value_); {condition_f(Value_)} -> convertible_to<bool>;}
+		requires requires() {f(Value_); {condition_f(Value_)} -> convertible_to<bool>;}
 	{
-		std::unique_lock lock(Mutex_);
+		std::unique_lock lock{Mutex_};
 		ConditionVariable_.wait(lock, [this, &condition_f]{return condition_f(Value_);});
 		return f(Value_);
 	}
 	template <decayed_type T> template <typename F, typename ConditionF> inline
 		auto Atomic<T>::apply(F&& f, ConditionF&& condition_f) -> decltype(f(Value_))
-		requires requires(){f(Value_); {condition_f(std::declval<const T&>())} -> convertible_to<bool>;}
+		requires requires() {f(Value_); {condition_f(std::declval<const T&>())} -> convertible_to<bool>;}
 	{
-		std::unique_lock lock(Mutex_);
+		std::unique_lock lock{Mutex_};
 		ConditionVariable_.wait(lock, [this, &condition_f]{return condition_f(const_cast<const T&>(Value_));});
 		if constexpr (std::same_as<decltype(f(Value_)), void>)
 		{
@@ -109,9 +109,9 @@ namespace mirism
 	template <decayed_type T> template <typename F, typename ConditionF> inline
 		auto Atomic<T>::apply(F&& f, ConditionF&& condition_f, std::chrono::steady_clock::duration timeout) const
 		-> std::conditional_t<std::same_as<decltype(f(Value_)), void>, bool, std::optional<decltype(f(Value_))>>
-		requires requires(){f(Value_); {condition_f(Value_)} -> convertible_to<bool>;}
+		requires requires() {f(Value_); {condition_f(Value_)} -> convertible_to<bool>;}
 	{
-		std::unique_lock lock(Mutex_);
+		std::unique_lock lock{Mutex_};
 		if (ConditionVariable_.wait_for(lock, timeout, [this, &condition_f]{return condition_f(Value_);}))
 		{
 			if constexpr (std::same_as<decltype(f(Value_)), void>)
@@ -133,9 +133,9 @@ namespace mirism
 	template <decayed_type T> template <typename F, typename ConditionF> inline
 		auto Atomic<T>::apply(F&& f, ConditionF&& condition_f, std::chrono::steady_clock::duration timeout)
 		-> std::conditional_t<std::same_as<decltype(f(Value_)), void>, bool, std::optional<decltype(f(Value_))>>
-		requires requires(){f(Value_); {condition_f(std::declval<const T&>())} -> convertible_to<bool>;}
+		requires requires() {f(Value_); {condition_f(std::declval<const T&>())} -> convertible_to<bool>;}
 	{
-		std::unique_lock lock(Mutex_);
+		std::unique_lock lock{Mutex_};
 		if (ConditionVariable_.wait_for(lock, timeout, [this, &condition_f]{return condition_f(const_cast<const T&>(Value_));}))
 		{
 			if constexpr (std::same_as<decltype(f(Value_)), void>)
@@ -161,16 +161,16 @@ namespace mirism
 	}
 
 	template <decayed_type T> template <typename ConditionF> inline void Atomic<T>::wait(ConditionF&& condition_f) const
-		requires requires(){{condition_f(Value_)} -> convertible_to<bool>;}
+		requires requires() {{condition_f(Value_)} -> convertible_to<bool>;}
 	{
-		std::unique_lock lock(Mutex_);
+		std::unique_lock lock{Mutex_};
 		ConditionVariable_.wait(lock, [this, &condition_f]{return condition_f(Value_);});
 	}
 	template <decayed_type T> template <typename ConditionF> inline
 		bool Atomic<T>::wait(ConditionF&& condition_f, std::chrono::steady_clock::duration timeout) const
-		requires requires(){{condition_f(Value_)} -> convertible_to<bool>;}
+		requires requires() {{condition_f(Value_)} -> convertible_to<bool>;}
 	{
-		std::unique_lock lock(Mutex_);
+		std::unique_lock lock{Mutex_};
 		return ConditionVariable_.wait_for(lock, timeout, [this, &condition_f]{return condition_f(Value_);});
 	}
 
@@ -180,9 +180,9 @@ namespace mirism
 			std::unique_lock<std::recursive_mutex>&& lock,
 			std::experimental::observer_ptr<std::conditional_t<Const, const Atomic<T>, Atomic<T>>> value
 		)
-	:	Lock_(std::move(lock)), Value_(value) {}
+	:	Lock_{std::move(lock)}, Value_{value} {}
 	template <decayed_type T> template <bool Const> inline Atomic<T>::Guard<Const>::Guard(Guard<Const>&& other)
-	:	Lock_(std::move(other.Lock_)), Value_(other.Value_) {}
+	:	Lock_{std::move(other.Lock_)}, Value_{other.Value_} {}
 	template <decayed_type T> template <bool Const> inline Atomic<T>::Guard<Const>::~Guard()
 		{Value_->ConditionVariable_.notify_all();}
 
@@ -197,30 +197,30 @@ namespace mirism
 		{return Value_->Value_;}
 	
 	template <decayed_type T> inline Atomic<T>::Guard<true> Atomic<T>::lock() const
-		{return {std::unique_lock(Mutex_), std::experimental::make_observer(this)};}
+		{return {std::unique_lock{Mutex_}, std::experimental::make_observer(this)};}
 	template <decayed_type T> inline Atomic<T>::Guard<false> Atomic<T>::lock()
-		{return {std::unique_lock(Mutex_), std::experimental::make_observer(this)};}
+		{return {std::unique_lock{Mutex_}, std::experimental::make_observer(this)};}
 	template <decayed_type T> template <typename ConditionF> inline
 		Atomic<T>::Guard<true> Atomic<T>::lock(ConditionF&& condition_f) const
-		requires requires(){{condition_f(Value_)} -> convertible_to<bool>;}
+		requires requires() {{condition_f(Value_)} -> convertible_to<bool>;}
 	{
-		std::unique_lock lock(Mutex_);
+		std::unique_lock lock{Mutex_};
 		ConditionVariable_.wait(lock, [this, &condition_f]{return condition_f(Value_);});
 		return {{std::move(lock), std::experimental::make_observer(this)}};
 	}
 	template <decayed_type T> template <typename ConditionF> inline
 		Atomic<T>::Guard<false> Atomic<T>::lock(ConditionF&& condition_f)
-		requires requires(){{condition_f(std::declval<const T&>())} -> convertible_to<bool>;}
+		requires requires() {{condition_f(std::declval<const T&>())} -> convertible_to<bool>;}
 	{
-		std::unique_lock lock(Mutex_);
+		std::unique_lock lock{Mutex_};
 		ConditionVariable_.wait(lock, [this, &condition_f]{return condition_f(const_cast<const T&>(Value_));});
 		return {{std::move(lock), std::experimental::make_observer(this)}};
 	}
 	template <decayed_type T> template <typename ConditionF> inline std::optional<typename Atomic<T>::Guard<true>>
 		Atomic<T>::lock(ConditionF&& condition_f, std::chrono::steady_clock::duration timeout) const
-		requires requires(){{condition_f(Value_)} -> convertible_to<bool>;}
+		requires requires() {{condition_f(Value_)} -> convertible_to<bool>;}
 	{
-		std::unique_lock lock(Mutex_);
+		std::unique_lock lock{Mutex_};
 		if (ConditionVariable_.wait_for(lock, timeout, [this, &condition_f]{return condition_f(Value_);}))
 			return {{std::move(lock), std::experimental::make_observer(this)}};
 		else
@@ -228,9 +228,9 @@ namespace mirism
 	}
 	template <decayed_type T> template <typename ConditionF> inline std::optional<typename Atomic<T>::Guard<false>>
 		Atomic<T>::lock(ConditionF&& condition_f, std::chrono::steady_clock::duration timeout)
-		requires requires(){{condition_f(std::declval<const T&>())} -> convertible_to<bool>;}
+		requires requires() {{condition_f(std::declval<const T&>())} -> convertible_to<bool>;}
 	{
-		std::unique_lock lock(Mutex_);
+		std::unique_lock lock{Mutex_};
 		if
 		(
 			ConditionVariable_.wait_for

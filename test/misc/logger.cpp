@@ -14,7 +14,7 @@ int do_something(int arg1, float arg2)
 	// create a Logger::Guard at start of a function with parameters.
 	// if log level >= Debug, some information will be print into the log, include function name, parameters, start and
 	// return time, and so on.
-	mirism::Logger::Guard log(arg1, arg2);
+	mirism::Logger::Guard log{arg1, arg2};
 
 	// use Logger::Guard to log something.
 	log.log<mirism::Logger::Level::Info>("{} {}"_f("hello", "world"));

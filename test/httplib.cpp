@@ -4,7 +4,7 @@
 int main()
 {
 	mirism::Logger::init(std::experimental::observer_ptr<std::ostream>(&std::cout), mirism::Logger::Level::Debug);
-	mirism::server::Httplib<false> httplib("localhost", 8080);
+	mirism::server::Httplib<false> httplib{"localhost", 8080};
 	httplib(false, [](auto request)
 	{
 		mirism::Instance::Response response;

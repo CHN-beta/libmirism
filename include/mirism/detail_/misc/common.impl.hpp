@@ -12,7 +12,7 @@ namespace mirism
 	[[gnu::always_inline]] inline void unused(auto&&...) {}
 
 	inline std::regex literals::operator""_re(const char* str, std::size_t len)
-		{return std::regex(str, len);}
+		{return std::regex{str, len};}
 
 	template <typename T> constexpr inline bool CaseInsensitiveStringLess::operator()(const T& lhs, const T& rhs) const
 	{

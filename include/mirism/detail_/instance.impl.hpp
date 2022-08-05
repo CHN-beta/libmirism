@@ -12,12 +12,12 @@ namespace mirism
 		std::shared_ptr<server::Base> server, std::shared_ptr<handler::Base> handler,
 		std::shared_ptr<client::Base> client
 	)
-	: Server_(server), Handler_(handler), Client_(client), Status_(Status::Stopped)
-		{Logger::Guard log(Server_, Handler_, Client_);}
+	: Server_{server}, Handler_{handler}, Client_{client}, Status_{Status::Stopped}
+		{Logger::Guard log{Server_, Handler_, Client_};}
 
 	inline Instance& Instance::run(bool async)
 	{
-		Logger::Guard log(async);
+		Logger::Guard log{async};
 		auto status = std::make_optional(Status_.lock());
 		if (**status != Status::Stopped) [[unlikely]]
 			log.log<Logger::Level::Error>("Instance is already running. Ignoring request.");
@@ -41,7 +41,7 @@ namespace mirism
 			else
 			{
 				**status = Status::RunningSync;
-				std::thread thread([&, this]
+				std::thread thread{[&, this]
 				{
 					Logger::Guard log;
 					auto result = (*Server_)
@@ -51,7 +51,7 @@ namespace mirism
 					);
 					if (result) [[unlikely]]
 						log.log<Logger::Level::Error>("Server returned shutdown handler in sync mode. Ignoring it.");
-				});
+				}};
 				status.reset();
 				thread.join();
 				Status_ = Status::Stopped;
@@ -84,7 +84,7 @@ namespace mirism
 
 	template <auto Instance::* Member, FixedString Name> inline Instance& Instance::set_(auto value)
 	{
-		Logger::Guard log(value);
+		Logger::Guard log{value};
 		auto status = Status_.lock();
 		if (Status_ != Status::Stopped) [[unlikely]]
 			log.log<Logger::Level::Error>("Instance is running. Set {} anyway."_f(Name));
@@ -110,7 +110,7 @@ namespace mirism
 	inline std::shared_ptr<client::Base> Instance::get_client() const
 		{return get_<&Instance::Client_, "client">();}
 	inline Instance::Status Instance::get_status() const
-		{return Logger::Guard().rtn(Status_.get());}
+		{return Logger::Guard{}.rtn(Status_.get());}
 
 	inline std::ostream& stream_operators::operator<<(std::ostream& os, const Instance::Request& request)
 	{

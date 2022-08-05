@@ -113,7 +113,7 @@ namespace mirism::server
 		return handler_wrapper;
 	}
 	inline Httplib<false>::Httplib(std::string host, int port)
-		: Host_(host), Port_(port) {Logger::Guard guard(Host_, Port_);}
+		: Host_{host}, Port_{port} {Logger::Guard guard{Host_, Port_};}
 	inline void Httplib<false>::operator()
 		(bool async, std::function<Instance::Response(Instance::Request)> handler)
 	{

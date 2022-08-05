@@ -6,7 +6,7 @@ namespace mirism::client
 {
 	inline std::unique_ptr<Instance::Response> Httplib::operator()(std::unique_ptr<Instance::Request> request)
 	{
-		Logger::Guard log(request);
+		Logger::Guard log{request};
 
 		if (!request) [[unlikely]]
 			return nullptr;
@@ -41,7 +41,7 @@ namespace mirism::client
 		}
 
 		// construct the client object
-		auto client = httplib::Client(scheme + host);
+		auto client = httplib::Client{scheme + host};
 		if (DisableServerCertificateVerification)
 			client.enable_server_certificate_verification(false);
 

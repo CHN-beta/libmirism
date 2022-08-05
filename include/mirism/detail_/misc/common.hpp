@@ -35,6 +35,16 @@
 
 # include <magic_enum.hpp>
 
+# include <boost/iostreams/filtering_streambuf.hpp>
+# include <boost/iostreams/copy.hpp>
+# include <boost/iostreams/filter/gzip.hpp>
+# include <boost/iostreams/filter/zlib.hpp>
+
+# include <brotli/encode.h>
+# include <brotli/decode.h>
+
+# include <cppcoro/generator.hpp>
+
 namespace mirism
 {
 	template<typename... Ts> std::size_t hash(Ts&&... objs);

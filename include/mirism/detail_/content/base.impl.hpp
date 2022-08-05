@@ -11,7 +11,7 @@ namespace mirism::content
 	}
 	inline Base<>& Base<>::patch_unregister(std::size_t id)
 	{
-		Logger::Guard log(id);
+		Logger::Guard log{id};
 		Patches_.erase(id);
 		return *this;
 	}
@@ -19,7 +19,7 @@ namespace mirism::content
 	template <VariableString<64>... SupportedContentTypes> requires (sizeof...(SupportedContentTypes) > 0)
 		inline const std::set<std::string>& Base<SupportedContentTypes...>::get_supported_content_types() const
 	{
-		static auto supported_content_types = [&]()
+		static auto supported_content_types = [&]
 		{
 			std::set<std::string> types;
 			(types.emplace(SupportedContentTypes.Data, SupportedContentTypes.Size), ...);

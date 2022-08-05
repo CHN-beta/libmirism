@@ -7,7 +7,7 @@ find_package(fmt 8 REQUIRED)
 
 find_path(NAMEOF_INCLUDE_DIR nameof.hpp REQUIRED)
 
-find_package(Boost REQUIRED)
+find_package(Boost REQUIRED COMPONENTS headers iostreams)
 
 find_path(BACKTRACE_INCLUDE_DIR backtrace.h REQUIRED)
 find_library(BACKTRACE_LIB backtrace REQUIRED)
@@ -19,14 +19,24 @@ find_package(magic_enum REQUIRED)
 
 find_package(OpenSSL REQUIRED)
 
+find_path(BROTLI_ENCODE_INCLUDE_DIR brotli/encode.h REQUIRED)
+find_path(BROTLI_DECODE_INCLUDE_DIR brotli/decode.h REQUIRED)
+set(BROTLI_INCLUDE_DIR ${BROTLI_ENCODE_INCLUDE_DIR} ${BROTLI_DECODE_INCLUDE_DIR})
+find_library(BROTLI_COMMON_LIB brotlicommon REQUIRED)
+find_library(BROTLI_ENC_LIB brotlienc REQUIRED)
+find_library(BROTLI_DEC_LIB brotlidec REQUIRED)
+set(BROTLI_LIB ${BROTLI_COMMON_LIB} ${BROTLI_ENC_LIB} ${BROTLI_DEC_LIB})
+
+find_package(cppcoro REQUIRED)
+
 get_property(ImportedTargets DIRECTORY "${CMAKE_SOURCE_DIR}" PROPERTY IMPORTED_TARGETS)
 message("Imported targets: ${ImportedTargets}")
 
 add_library(libmirism INTERFACE)
 target_include_directories(libmirism INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include ${NAMEOF_INCLUDE_DIR}
-	${BACKTRACE_INCLUDE_DIR} ${TGBOTCPP_INCLUDE_DIR})
-target_link_libraries(libmirism INTERFACE fmt::fmt Boost::boost ${BACKTRACE_LIB} ${TGBOTCPP_LIB} magic_enum::magic_enum
-	OpenSSL::SSL OpenSSL::Crypto)
+	${BACKTRACE_INCLUDE_DIR} ${TGBOTCPP_INCLUDE_DIR} ${BROTLI_INCLUDE_DIR})
+target_link_libraries(libmirism INTERFACE fmt::fmt Boost::headers Boost::iostreams ${BACKTRACE_LIB} ${TGBOTCPP_LIB}
+	magic_enum::magic_enum OpenSSL::SSL OpenSSL::Crypto ${BROTLI_LIB} cppcoro::cppcoro)
 target_compile_features(libmirism INTERFACE cxx_std_23)
 target_compile_options(libmirism INTERFACE -Wno-pmf-conversions)
 

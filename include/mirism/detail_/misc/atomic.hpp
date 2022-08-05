@@ -36,10 +36,10 @@ namespace mirism
 		// Wait until condition funciton returns true, and apply a function to stored value.
 		// At the end of non-const overload, ConditionVariable_.notify_all() is called.
 		public: template <typename F, typename ConditionF> auto apply(F&& f, ConditionF&& condition_f) const
-			-> decltype(f(Value_)) requires requires(){f(Value_); {condition_f(Value_)} -> convertible_to<bool>;};
+			-> decltype(f(Value_)) requires requires() {f(Value_); {condition_f(Value_)} -> convertible_to<bool>;};
 		public: template <typename F, typename ConditionF> auto apply(F&& f, ConditionF&& condition_f)
 			-> decltype(f(Value_))
-			requires requires(){f(Value_); {condition_f(std::declval<const T&>())} -> convertible_to<bool>;};
+			requires requires() {f(Value_); {condition_f(std::declval<const T&>())} -> convertible_to<bool>;};
 
 		// Wait for some time, until condition funciton returns true and apply a function to stored value and return the
 		// result (with std::optional wrapped); if timeout, return false or std::nullopt.
@@ -47,18 +47,18 @@ namespace mirism
 		public: template <typename F, typename ConditionF>
 			auto apply(F&& f, ConditionF&& condition_f, std::chrono::steady_clock::duration timeout) const
 			-> std::conditional_t<std::same_as<decltype(f(Value_)), void>, bool, std::optional<decltype(f(Value_))>>
-			requires requires(){f(Value_); {condition_f(Value_)} -> convertible_to<bool>;};
+			requires requires() {f(Value_); {condition_f(Value_)} -> convertible_to<bool>;};
 		public: template <typename F, typename ConditionF>
 			auto apply(F&& f, ConditionF&& condition_f, std::chrono::steady_clock::duration timeout)
 			-> std::conditional_t<std::same_as<decltype(f(Value_)), void>, bool, std::optional<decltype(f(Value_))>>
-			requires requires(){f(Value_); {condition_f(std::declval<const T&>())} -> convertible_to<bool>;};
+			requires requires() {f(Value_); {condition_f(std::declval<const T&>())} -> convertible_to<bool>;};
 
 		// Wait until condition funciton returns true, with an optional timeout
 		public: template <typename ConditionF> void wait(ConditionF&& condition_f) const
-			requires requires(){{condition_f(Value_)} -> convertible_to<bool>;};
+			requires requires() {{condition_f(Value_)} -> convertible_to<bool>;};
 		public: template <typename ConditionF>
 			bool wait(ConditionF&& condition_f, std::chrono::steady_clock::duration timeout) const
-			requires requires(){{condition_f(Value_)} -> convertible_to<bool>;};
+			requires requires() {{condition_f(Value_)} -> convertible_to<bool>;};
 
 		// Attain lock from outside when constructing, and release when destructing.
 		// For non-const variant, When destructing, ConditionVariable_.notify_all() is called.
@@ -85,14 +85,14 @@ namespace mirism
 		public: Guard<true> lock() const;
 		public: Guard<false> lock();
 		public: template <typename ConditionF> Guard<true> lock(ConditionF&& condition_f) const
-			requires requires(){{condition_f(Value_)} -> convertible_to<bool>;};
+			requires requires() {{condition_f(Value_)} -> convertible_to<bool>;};
 		public: template <typename ConditionF> Guard<false> lock(ConditionF&& condition_f)
-			requires requires(){{condition_f(std::declval<const T&>())} -> convertible_to<bool>;};
+			requires requires() {{condition_f(std::declval<const T&>())} -> convertible_to<bool>;};
 		public: template <typename ConditionF>
 			std::optional<Guard<true>> lock(ConditionF&& condition_f, std::chrono::steady_clock::duration timeout) const
-			requires requires(){{condition_f(Value_)} -> convertible_to<bool>;};
+			requires requires() {{condition_f(Value_)} -> convertible_to<bool>;};
 		public: template <typename ConditionF>
 			std::optional<Guard<false>> lock(ConditionF&& condition_f, std::chrono::steady_clock::duration timeout)
-			requires requires(){{condition_f(std::declval<const T&>())} -> convertible_to<bool>;};
+			requires requires() {{condition_f(std::declval<const T&>())} -> convertible_to<bool>;};
 	};
 }
