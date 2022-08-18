@@ -195,7 +195,7 @@ namespace mirism
 	template <decayed_type T> template <bool Const> inline
 		std::conditional_t<Const, const T&, T&> Atomic<T>::Guard<Const>::value() const
 		{return Value_->Value_;}
-	
+
 	template <decayed_type T> inline Atomic<T>::Guard<true> Atomic<T>::lock() const
 		{return {std::unique_lock{Mutex_}, std::experimental::make_observer(this)};}
 	template <decayed_type T> inline Atomic<T>::Guard<false> Atomic<T>::lock()

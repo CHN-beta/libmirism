@@ -48,7 +48,7 @@
 namespace mirism
 {
 	template<typename... Ts> std::size_t hash(Ts&&... objs);
-	void unused(auto&&...);
+	[[gnu::always_inline]] void unused(auto&&...);
 
 	using uint128_t = __uint128_t;
 
@@ -67,4 +67,6 @@ namespace mirism
 	template <typename T> struct remove_member_pointer {using type = T;};
 	template <typename C, typename T> struct remove_member_pointer<T C::*> {using type = T;};
 	template <typename T> using remove_member_pointer_t = typename remove_member_pointer<T>::type;
+
+	[[noreturn]] void block_forever();
 }

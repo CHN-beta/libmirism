@@ -1,5 +1,6 @@
 # pragma once
 # include <mirism/detail_/misc/concepts.hpp>
+# include <mirism/detail_/misc/smartref.hpp>
 
 namespace mirism
 {
@@ -94,4 +95,26 @@ namespace mirism
 		= detail_::specialization_of_basic_variable_string<T, C>
 			&& detail_::specialization_of_basic_variable_string<T, void>;
 	template <typename T> concept specialization_of_variable_string = specialization_of_basic_variable_string<T, char>;
+
+	namespace string
+	{
+		// Find specific content in a string. Return unmatched content before the match and the match result every
+		// time. If match reached the end, the second returned value will be std::sregex_iterator().
+		cppcoro::generator<std::pair<std::string_view, std::sregex_iterator>> find
+			(SmartRef<const std::string> data, SmartRef<const std::regex> regex);
+		// Use a regex to find all matches and replace them with a callback function
+		std::string replace
+			(const std::string& data, const std::regex& regex, std::function<std::string(const std::smatch&)> function);
+
+		// Compress or decompress a string. On error return std::nullopt
+		enum class CompressMethod {Gzip, Deflated, Brotli};
+		template <CompressMethod Method> std::optional<std::string> compress(const std::string& data);
+		template <> std::optional<std::string> compress<CompressMethod::Gzip>(const std::string& data);
+		template <> std::optional<std::string> compress<CompressMethod::Deflated>(const std::string& data);
+		template <> std::optional<std::string> compress<CompressMethod::Brotli>(const std::string& data);
+		template <CompressMethod Method> std::optional<std::string> decompress(const std::string& data);
+		template <> std::optional<std::string> decompress<CompressMethod::Gzip>(const std::string& data);
+		template <> std::optional<std::string> decompress<CompressMethod::Deflated>(const std::string& data);
+		template <> std::optional<std::string> decompress<CompressMethod::Brotli>(const std::string& data);
+	}
 }

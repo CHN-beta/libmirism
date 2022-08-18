@@ -1,7 +1,10 @@
 # include <mirism/detail_/misc/common.impl.hpp>
 # include <mirism/detail_/misc/concepts.impl.hpp>
 # include <mirism/detail_/misc/atomic.impl.hpp>
+# include <mirism/detail_/misc/format.impl.hpp>
+# include <mirism/detail_/misc/logger.impl.hpp>
 # include <mirism/detail_/misc/string.impl.hpp>
+# include <mirism/detail_/misc/smartref.impl.hpp>
 
 using namespace mirism::literals;
 
@@ -63,6 +66,21 @@ void test_basic_variable_string()
 
 int main()
 {
+	mirism::Logger::init(std::experimental::observer_ptr<std::ostream>(&std::cout), mirism::Logger::Level::Debug);
+
 	test_basic_fixed_string();
 	test_basic_variable_string();
+
+	// use string::find to search pattern in string.
+	for (auto [unmatched, matched] : mirism::string::find("kfc crazy thursday v me 50", "([a-z0-9]+)"_re))
+	{
+		if (matched == std::sregex_iterator{})
+			fmt::print("unmatched: \"{}\" matched: none\n", unmatched);
+		else
+			fmt::print("unmatched: \"{}\" matched: \"{}\"\n", unmatched, (*matched)[0].str());
+	}
+
+	// use string::compress and string::decompress to compress and decompress a string.
+	std::cout << "{}\n"_f(mirism::string::decompress<mirism::string::CompressMethod::Gzip>
+		(*mirism::string::compress<mirism::string::CompressMethod::Gzip>("hello world")));
 }

@@ -27,7 +27,7 @@ namespace mirism
 			std::shared_ptr<Pipe> Body;
 			struct
 			{
-				std::optional<std::uint32_t> IP;
+				std::optional<std::variant<std::uint32_t, std::array<std::uint16_t, 8>>> IP;
 				std::optional<std::uint16_t> Port;
 			} Remote, Local;
 			std::shared_ptr<Atomic<bool>> Cancelled;
@@ -39,7 +39,7 @@ namespace mirism
 			std::shared_ptr<Pipe> Body;
 			struct
 			{
-				std::optional<std::uint32_t> IP;
+				std::optional<std::variant<std::uint32_t, std::array<std::uint16_t, 8>>> IP;
 				std::optional<std::uint16_t> Port;
 			} Remote, Local;
 		};
@@ -48,13 +48,16 @@ namespace mirism
 		protected: std::shared_ptr<handler::Base> Handler_;
 		protected: std::shared_ptr<client::Base> Client_;
 
+		// prevent members be called asynchronously.
+		protected: std::mutex Lock_;
+
 		// Define the status of the instance, its lock is also used to prevent the member function of Instance be called
 		// symultaneously.
-		public: enum class Status {RunningSync, RunningAsync, Stopped};
-		protected: Atomic<Status> Status_;
+		public: enum class Status {Running, Stopped};
+		protected: Status Status_;
 
 		// Under async mode, notify the server object to stop.
-		protected: Atomic<std::move_only_function<void()>> ShutdownHandler_;
+		protected: std::move_only_function<void()> ShutdownHandler_;
 
 		public: Instance
 		(
@@ -63,10 +66,11 @@ namespace mirism
 		);
 		public: virtual ~Instance() = default;
 
-		public: Instance& run(bool async = false);
+		public: Instance& run();
 		public: Instance& shutdown();
 
-		protected: template <auto Instance::* Member, FixedString Name> [[gnu::always_inline]] Instance& set_(auto value);
+		protected: template <auto Instance::* Member, FixedString Name> [[gnu::always_inline]]
+			Instance& set_(auto value);
 		public: Instance& set_server(std::shared_ptr<server::Base> server = nullptr);
 		public: Instance& set_handler(std::shared_ptr<handler::Base> handler = nullptr);
 		public: Instance& set_client(std::shared_ptr<client::Base> client = nullptr);
@@ -75,6 +79,10 @@ namespace mirism
 		public: std::shared_ptr<handler::Base> get_handler() const;
 		public: std::shared_ptr<client::Base> get_client() const;
 		public: Status get_status() const;
+
+		public: static std::optional<std::variant<std::uint32_t, std::array<std::uint16_t, 8>>> ip_convert
+			(const std::string& ip_str);
+		public: static std::string ip_convert(const std::variant<std::uint32_t, std::array<std::uint16_t, 8>>& ip);
 	};
 	inline namespace stream_operators
 	{
@@ -82,3 +90,5 @@ namespace mirism
 		std::ostream& operator<<(std::ostream& os, const Instance::Response& response);
 	}
 }
+template<> struct fmt::formatter<mirism::Instance::Request> : public fmt::ostream_formatter {};
+template<> struct fmt::formatter<mirism::Instance::Response> : public fmt::ostream_formatter {};

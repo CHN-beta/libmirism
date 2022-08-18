@@ -5,7 +5,7 @@ namespace mirism::content
 {
 	// content is not thread safe.
 	template <VariableString<64>... SupportedContentTypes> class Base;
-	template <> class Base<>
+	template<> class Base<>
 	{
 		protected: std::map<std::size_t, std::move_only_function<void(std::string&)>> Patches_;
 		protected: std::size_t NextPatchId_ = 0;
@@ -32,7 +32,7 @@ namespace mirism::content
 	// It is developer's responsibility to make sure no redundant content_type between default content classes and
 	// between custom content classes.
 	template <std::derived_from<Base<>>... Contents> class Selector;
-	template <> class Selector<>
+	template<> class Selector<>
 	{
 		public: virtual ~Selector() = default;
 

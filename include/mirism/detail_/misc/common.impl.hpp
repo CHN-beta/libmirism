@@ -9,7 +9,7 @@ namespace mirism
 		(boost::hash_combine(result, objs), ...);
 		return result;
 	}
-	[[gnu::always_inline]] inline void unused(auto&&...) {}
+	inline void unused(auto&&...) {}
 
 	inline std::regex literals::operator""_re(const char* str, std::size_t len)
 		{return std::regex{str, len};}
@@ -19,7 +19,13 @@ namespace mirism
 		return std::lexicographical_compare
 		(
 			lhs.begin(), lhs.end(), rhs.begin(), rhs.end(),
-			[](char lhs, char rhs) {return std::tolower(lhs) < std::tolower(rhs);}
+			[](char lhs, char rhs){return std::tolower(lhs) < std::tolower(rhs);}
 		);
+	}
+
+	void block_forever()
+	{
+		std::promise<void>().get_future().wait();
+		std::unreachable();
 	}
 }

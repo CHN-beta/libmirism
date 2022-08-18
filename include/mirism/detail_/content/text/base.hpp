@@ -8,22 +8,6 @@ namespace mirism::content::text
 	{
 		protected: std::optional<std::string> Data_;
 
-		// Compress or decompress a string. On error return std::nullopt
-		public: enum class CompressMethod {Gzip, Deflated, Brotli};
-		public: static std::optional<std::string> compress(const std::string& data, CompressMethod method);
-		public: static std::optional<std::string> decompress(const std::string& data, CompressMethod method);
-
-		// Find specific content in a string view. Return unmatched content before the match and the match result every
-		// time. If match reached the end, the second returned value will be std::sregex_iterator().
-		public: static cppcoro::generator<std::pair<std::string_view, std::sregex_iterator>> find
-			(const std::string& data, std::regex regex);
-		public: static cppcoro::generator<std::pair<std::string_view, std::sregex_iterator>> find
-			(std::string&& data, std::regex regex);
-
-		// Use a regex to find all matches and replace them with a callback function
-		public: static std::string replace
-			(const std::string& data, const std::regex& regex, std::function<std::string(const std::smatch&)> function);
-
 		// Read synchronously fmrom a pipe. will read all data into Data_, that is, until read failed, Break, EndOfFile.
 		// If read failed or Break, return false and no data will preserve.
 		public: virtual bool read(std::shared_ptr<Pipe> pipe, std::optional<CompressMethod> method = {});
@@ -36,7 +20,6 @@ namespace mirism::content::text
 		// Text do not automatically apply patch. Instead, use this function to apply patch.
 		// It is guaranteed that the whole data will be supplied to the patch in one shot.
 		public: virtual Base<>& patch_apply();
-
 		// apply patch without register it.
 		public: virtual Base<>& patch_apply(std::move_only_function<void(std::string&)> patch);
 	};

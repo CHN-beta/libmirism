@@ -24,8 +24,7 @@ namespace mirism::server
 		public: Httplib(std::string host, int port);
 		public: std::move_only_function<void()> operator()
 		(
-			bool async, std::experimental::observer_ptr<handler::Base> handler,
-			std::experimental::observer_ptr<client::Base> client
+			std::experimental::observer_ptr<handler::Base> handler, std::experimental::observer_ptr<client::Base> client
 		) override;
 	};
 	template <> class Httplib<true> : public detail_::HttplibBase, public Logger::ObjectMonitor<Httplib<true>>
@@ -37,8 +36,7 @@ namespace mirism::server
 		public: Httplib(std::string host, int port, std::string cert_path, std::string key_path);
 		public: std::move_only_function<void()> operator()
 		(
-			bool async, std::experimental::observer_ptr<handler::Base> handler,
-			std::experimental::observer_ptr<client::Base> client
+			std::experimental::observer_ptr<handler::Base> handler, std::experimental::observer_ptr<client::Base> client
 		) override;
 	};
 }
