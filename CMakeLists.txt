@@ -5,7 +5,7 @@ include(GNUInstallDirs)
 
 find_package(fmt 8 REQUIRED)
 
-find_path(NAMEOF_INCLUDE_DIR nameof.hpp REQUIRED)
+find_package(nameof REQUIRED)
 
 find_package(Boost REQUIRED COMPONENTS headers iostreams)
 
@@ -33,9 +33,9 @@ get_property(ImportedTargets DIRECTORY "${CMAKE_SOURCE_DIR}" PROPERTY IMPORTED_T
 message("Imported targets: ${ImportedTargets}")
 
 add_library(libmirism INTERFACE)
-target_include_directories(libmirism INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include ${NAMEOF_INCLUDE_DIR}
-	${BACKTRACE_INCLUDE_DIR} ${TGBOTCPP_INCLUDE_DIR} ${BROTLI_INCLUDE_DIR})
-target_link_libraries(libmirism INTERFACE fmt::fmt Boost::headers Boost::iostreams ${BACKTRACE_LIB} ${TGBOTCPP_LIB}
+target_include_directories(libmirism INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include ${BACKTRACE_INCLUDE_DIR}
+	${TGBOTCPP_INCLUDE_DIR} ${BROTLI_INCLUDE_DIR})
+target_link_libraries(libmirism INTERFACE fmt::fmt nameof::nameof Boost::headers Boost::iostreams ${BACKTRACE_LIB} ${TGBOTCPP_LIB}
 	magic_enum::magic_enum OpenSSL::SSL OpenSSL::Crypto ${BROTLI_LIB} cppcoro::cppcoro)
 target_compile_features(libmirism INTERFACE cxx_std_23)
 target_compile_options(libmirism INTERFACE -Wno-pmf-conversions)

@@ -14,5 +14,44 @@ namespace mirism::handler::mirror
 		{
 			
 		};
+
+	enum class PatchTiming
+	{
+		BeforeAllPatch,
+		BeforeRequestHeaderPatch,
+		BeforeInternalRequestHeaderPatch,
+		AtRequestHeaderPatch,
+		AfterInternalRequestHeaderPatch,
+		AfterRequestHeaderPatch,
+		BeforeRequestBodyPatch,
+		BeforeRequestBodyRead,
+		AfterRequestBodyRead,
+		BeforeInternalRequestBodyPatch,
+		AtRequestBodyPatch,
+		AfterInternalRequestBodyPatch,
+		BeforeRequestBodyWrite,
+		AfterRequestBodyWrite,
+		AfterRequestBodyPatch,
+		BeforeFetchPatch,
+		AfterFetchPatch,
+		BeforeResponseHeaderPatch,
+		BeforeInternalResponseHeaderPatch,
+		AtResponseHeaderPatch,
+		AfterInternalResponseHeaderPatch,
+		AfterResponseHeaderPatch,
+		BeforeResponseBodyPatch,
+		BeforeResponseBodyRead,
+		AfterResponseBodyRead,
+		BeforeInternalResponseBodyPatch,
+		AtResponseBodyPatch,
+		AfterInternalResponseBodyPatch,
+		BeforeResponseBodyWrite,
+		AfterResponseBodyWrite,
+		AfterResponseBodyPatch,
+		AfterAllPatch
+	};
+
+	url_t url_patch(const Request&, const DomainStrategy&, const url_t&);
+
 	}
 }

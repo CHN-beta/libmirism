@@ -82,6 +82,8 @@ namespace mirism
 
 		public: static std::optional<std::variant<std::uint32_t, std::array<std::uint16_t, 8>>> ip_convert
 			(const std::string& ip_str);
+		public: static std::string ip_convert(const std::uint32_t ip);
+		public: static std::string ip_convert(const std::array<std::uint16_t, 8> ip);
 		public: static std::string ip_convert(const std::variant<std::uint32_t, std::array<std::uint16_t, 8>>& ip);
 	};
 	inline namespace stream_operators

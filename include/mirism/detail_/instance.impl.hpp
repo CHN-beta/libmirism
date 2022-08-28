@@ -102,73 +102,168 @@ namespace mirism
 		auto ipv4_parse = [](const std::string& ip_str) -> std::optional<std::uint32_t>
 		{
 			std::uint32_t ip;
-			if (std::istringstream{ip_str} >> ip)
+			std::vector<std::string> parts;
+
+			// split using '.'
+			for (auto& [unmatched, splitter] : string::find(ip_str, R"(\.)"_re))
+				parts.push_back(std::string{unmatched});
+
+			if (parts.size() != 4) [[unlikely]]
+				return std::nullopt;
+			for (auto& part : parts)
+			{
+				if (!std::regex_match(part, R"(^[0-9]{1,3}$)"_re) || std::stoi(part) > 255) [[unlikely]]
+					return std::nullopt;
+				ip = (ip << 8) + std::stoi(part);
+			}
+			return ip;
+		};
+		auto ipv6_parse = [ipv4_parse](const std::string& ip_str) -> std::optional<std::array<std::uint16_t, 8>>
+		{
+			std::array<std::uint16_t, 8> ip = {};
+			std::vector<std::string> parts;
+			std::optional<std::uint32_t> ipv4;
+			bool preceding_zero = false, postfix_zero = false;
+			std::size_t empty_count = 0;
+
+			// split using ':'
+			for (auto& [unmatched, splitter] : string::find(ip_str, ":"_re))
+				parts.push_back(std::string{unmatched});
+
+			// shortest: :: 3
+			// longest: ::1:2:3:4:5:6:7 9
+			if (parts.size() < 3 || parts.size() > 9) [[unlikely]]
+				return std::nullopt;
+			if (ip_str == "::")
 				return ip;
-			return std::nullopt;
+			
+			for (std::size_t i = 0; i < parts.size() - 1; i++)
+				if (!std::regex_match(parts[i], "[0-9a-fA-F]{0,4}"_re))
+					return std::nullopt;
+			if (!std::regex_match(parts.back(), "[0-9a-fA-F]{0,4}"_re))
+			{
+				ipv4 = ipv4_parse(parts.back());
+				// for ipv6(dual), max number of parts is 8
+				if (!ipv4 || parts.size() > 8) [[unlikely]]
+					return std::nullopt;
+			}
+
+			for (auto& part : parts)
+				if (part.empty())
+					empty_count++;
+			if (empty_count > 2) [[unlikely]]
+				return std::nullopt;
+			if (empty_count == 2)
+			{
+				if (parts[0].empty() && parts[1].empty())
+					preceding_zero = true;
+				else if (parts[parts.size() - 2].empty() && parts[parts.size() - 1].empty())
+					postfix_zero = true;
+				else [[unlikely]]
+					return std::nullopt;
+			}
+
+			if (ipv4)
+			{
+				ip[7] = *ipv4 & 0xffff;
+				ip[6] = *ipv4 >> 16;
+				if (preceding_zero)
+					for (int i = 5; i >= 0; i--)
+						// if parts[parts.size() - (7 - i)] exists and contains non-empty value
+						if (parts.size() - (7 - i) >= 2)
+							ip[i] = std::stoi(parts[parts.size() - (7 - i)]);
+				else if (empty_count == 1)
+				{
+					if (parts.size() > 7) [[unlikely]]
+						return std::nullopt;
+					for (std::size i = 0, p = 0; i < parts.size() - 1; i++, p++)
+					{
+						if (parts[i].empty())
+							p += (7 - parts.size());
+						else
+							ip[p] = std::stoi(parts[i]);
+					}
+				}
+				else
+				{
+					if (parts.size() != 7) [[unlikely]]
+						return std::nullopt;
+					for (std::size i = 0; i < parts.size() - 1; i++)
+						ip[i] = std::stoi(parts[i]);
+				}
+			}
+			else if (preceding_zero)
+				for (std::size i = 2; i < parts.size(); i++)
+					ip[i + (8 - parts.size())] = std::stoi(parts[i]);
+			else if (postfix_zero)
+				for (std::size i = 0; i < parts.size() - 2; i++)
+					ip[i] = std::stoi(parts[i]);
+			else if (empty_count == 1)
+				for (std::size i = 0, p = 0; i < parts.size(); i++, p++)
+				{
+					if (parts[i].empty())
+						p += (8 - parts.size());
+					else
+						ip[p] = std::stoi(parts[i]);
+				}
+			else
+			{
+				if (parts.size() != 8) [[unlikely]]
+					return std::nullopt;
+				for (std::size i = 0; i < parts.size() - 1; i++)
+					ip[i] = std::stoi(parts[i]);
+			}
+			return ip;
 		};
 
 		if (ip_str.contains(':'))
-		{
-			std::vector<std::uint16_t> ip_forward;
-			std::vector<std::uint16_t> ip_backward;
-			std::optional<std::string> ipv4;
-			bool backward = false;
-			for (auto& [unmatched, matched] : string::find(ip_str, "([0-9a-fA-F]{0,4})([:]{1,2}|$)"_re))
-			{
-				// only v4 part of ipv6(dual) could be unmatched
-				if (!unmatched.empty()) [[unlikely]]
-					return std::nullopt;
-
-				// if matched is empty, it means we reached the end of the string
-				// however, this should not happen, because we have exit after the last match
-				if (matched == std::sregex_iterator{}) [[unlikely]]
-					return std::nullopt;
-
-				// put into forward or backward vector
-				if (backward)
-					ip_backward.push_back(std::stoi((*matched)[1].str(), nullptr, 16));
-				else
-					ip_forward.push_back(std::stoi((*matched)[1].str(), nullptr, 16));
-
-				// if matched[2] is "::", we shoud go to backward; else if empty, we should break
-				if ((*matched)[2].str() == "::")
-				{
-					if (backward) [[unlikely]]
-						return std::nullopt;
-					backward = true;
-				}
-				else if ((*matched)[2].str().empty())
-					break;
-			}
-
-			std::array<std::uint16_t, 8> ip_array;
-			for (std::size_t i = 0; i < ip_forward.size(); ++i)
-				ip_array[i] = ip_forward[i];
-			for (std::size_t i = 0; i < ip_backward.size(); ++i)
-				ip_array[8 - ip_backward.size()] = ip_backward[i];
-		}
+			return log.rtn(ipv6_parse(ip_str));
 		else
-		{
-
-		}
-		auto result = std::experimental::make_observer(ip_str);
-		if (result)
-		{
-			auto [ip, port] = *result;
-			if (ip.size() == 4)
-				return std::variant<std::uint32_t, std::array<std::uint16_t, 8>>{ip};
-			else if (ip.size() == 16)
+			return log.rtn(ipv4_parse(ip_str));
+	}
+	inline std::string Instance::ip_convert(const std::uint32_t& ip)
+	{
+		Logger::Guard log{ip};
+		return log.rtn("{}.{}.{}.{}"_f(ip >> 24, (ip >> 16) & 0xff, (ip >> 8) & 0xff, ip & 0xff));
+	}
+	inline std::string Instance::ip_convert(const std::array<std::uint16_t, 8>& ip)
+	{
+		Logger::Guard log{ip};
+		std::string ip_str;
+		for (std::size_t i = 0; i < ip.size(); i++)
+			if (ip[i] == 0)
 			{
-				std::array<std::uint16_t, 8> array{};
-				for (std::size_t i = 0; i < 8; ++i)
-					array[i] = ip[i * 2] << 8 | ip[i * 2 + 1];
-				return std::variant<std::uint32_t, std::array<std::uint16_t, 8>>{array};
+				for (std::size_t j = i; j < ip.size() - 1; j++)
+					if (ip[j + 1] != 0)
+					{
+						if (i == 0)
+							ip_str = ":";
+						else
+							for (std::size_t k = 0; k < i; k++)
+								ip_str += "{:x}:"_f(k);
+						for (std::size_t k = j + 1; k < 8; k++)
+							ip_str += "{:x}:"_f(k);
+						return log.rtn(ip_str);
+					}
+				if (i == 0)
+					return log.rtn("::");
+				for (std::size_t k = 0; k < i; k++)
+					ip_str += "{:x}:"_f(k);
+				return log.rtn(ip_str + ":");
 			}
-			else
-				return std::nullopt;
-		}
+		for (std::size_t i = 0; i < ip.size(); i++)
+			ip_str += "{:x}:"_f(i);
+		return log.rtn(ip_str.substr(0, ip_str.size() - 1));
+	}
+	inline std::string Instance::ip_convert(const std::variant<std::uint32_t, std::array<std::uint16_t, 8>>& ip)
+	{
+		Logger::Guard log{ip};
+		if (std::holds_alternative<std::uint32_t>(ip))
+			return log.rtn(ip_convert(std::get<std::uint32_t>(ip)));
+		else if (std::holds_alternative<std::array<std::uint16_t, 8>>(ip))
+			return log.rtn(ip_convert(std::get<std::array<std::uint16_t, 8>>(ip)));
 		else
-			return std::nullopt;
+			std::unreachable();
 	}
 
 	inline std::ostream& stream_operators::operator<<(std::ostream& os, const Instance::Request& request)
