@@ -1,7 +1,24 @@
+// string.tpp:
+//	struct {Basic,}StaticString;
+//	auto operator""_ss;
+//	concept specialization_of_{basic_,}static_string;
+//	struct {Basic,}FixedString;
+//	auto operator""_fs;
+//	concept specialization_of_{basic_,}fixed_string;
+//	struct {Basic,}VariableString;
+//	concept specialization_of_{basic_,}variable_string;
+//	auto find(...);
+//	auto replace(...);
+
 # pragma once
+# include <regex>
+# include <array>
+# include <string>
+# include <string_view>
+# include <iostream>
 # include <cppcoro/generator.hpp>
-# include <mirism/detail_/misc/concepts.hpp>
-# include <mirism/detail_/misc/smartref.hpp>
+# include <mirism/detail_/misc/concepts.tpp>
+# include <mirism/detail_/misc/smartref.tpp>
 
 namespace mirism
 {

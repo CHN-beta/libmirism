@@ -1,5 +1,6 @@
 # pragma once
 # include <mutex>
+# include <optional>
 # include <condition_variable>
 # include <experimental/memory>
 # include <mirism/detail_/misc/concepts.hpp>

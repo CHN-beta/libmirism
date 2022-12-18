@@ -1,3 +1,9 @@
+// format.tpp:
+//	concept formattable;
+//	literals::operator""_f;
+//	std::ostream& << std::variant;
+//	fmt::formatter<OptionalWrap or Enum>;
+
 # pragma once
 # include <nameof.hpp>
 # include <mirism/detail_/misc/format.hpp>

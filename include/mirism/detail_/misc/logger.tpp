@@ -1,7 +1,9 @@
 # pragma once
 # define BOOST_STACKTRACE_USE_BACKTRACE
 # include <boost/stacktrace.hpp>
+# include <fmt/chrono.h>
 # include <mirism/detail_/misc/logger.hpp>
+# include <mirism/detail_/misc/common.tpp>
 # include <mirism/detail_/misc/format.tpp>
 
 namespace mirism
@@ -34,7 +36,7 @@ namespace mirism
 			("{} {} not found in Logger::Objects."_f(fmt::ptr(this), nameof::nameof_full_type<T>()));
 	}
 
-	template <typename... Param> Logger::Guard::Guard(Param&&... param)
+	template <typename... Param> inline Logger::Guard::Guard(Param&&... param)
 		: StartTime_{std::chrono::steady_clock::now()}
 	{
 		Indent_++;
@@ -91,7 +93,7 @@ namespace mirism
 		));
 		return std::forward<T>(value);
 	}
-	template <Logger::Level_t L> void Logger::Guard::log(const std::string& message) const
+	template <Logger::Level_t L> inline void Logger::Guard::log(const std::string& message) const
 	{
 		if (auto&& lock = LoggerConfig_.lock(); *lock && lock.value()->Level >= L)
 		{

@@ -1,4 +1,8 @@
+// smartref.tpp:
+//	class SmartRef<T>;
+
 # pragma once
+# include <utility>
 # include <mirism/detail_/misc/smartref.hpp>
 
 namespace mirism

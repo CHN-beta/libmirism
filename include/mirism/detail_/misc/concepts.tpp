@@ -1,3 +1,12 @@
+// concepts.hpp:
+//	concept decayed_type;
+//	concept complete_type;
+//	concept {{im,ex}plicitly_,}convertible_{to,from};
+//	concept consteval_invokable;
+//	concept enumerable;
+// concepts.tpp:
+//	concept specialization_of;
+
 # pragma once
 # include <mirism/detail_/misc/concepts.hpp>
 

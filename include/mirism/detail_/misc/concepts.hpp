@@ -1,5 +1,6 @@
 # pragma once
-# include <mirism/detail_/misc/common.hpp>
+# include <concepts>
+# include <type_traits>
 
 namespace mirism
 {

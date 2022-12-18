@@ -1,6 +1,7 @@
 # include <tgbot/tgbot.h>
-# include <mirism/detail_/misc/logger.hpp>
-# include <mirism/detail_/misc/format.hpp>
+# include <mirism/detail_/misc/logger.tpp>
+# include <mirism/detail_/misc/format.tpp>
+# include <mirism/detail_/misc/atomic.tpp>
 
 namespace mirism
 {

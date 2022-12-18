@@ -2,7 +2,7 @@
 # include <variant>
 # include <experimental/memory>
 # include <fmt/ostream.h>
-# include <mirism/detail_/misc/string.hpp>
+# include <mirism/detail_/misc/string.tpp>
 # include <mirism/detail_/misc/concepts.tpp>
 
 namespace mirism

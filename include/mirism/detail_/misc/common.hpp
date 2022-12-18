@@ -5,8 +5,8 @@
 
 namespace mirism
 {
-	template<typename... Ts> [[gnu::visibility("hidden")]] std::size_t hash(Ts&&... objs);
-	[[using gnu: always_inline, visibility("hidden")]] void unused(auto&&...);
+	template <typename... Ts> std::size_t hash(Ts&&... objs);
+	[[gnu::always_inline]] void unused(auto&&...);
 
 	using uint128_t = __uint128_t;
 
@@ -29,5 +29,5 @@ namespace mirism
 	template <typename C, typename T> struct remove_member_pointer<T C::*> {using type = T;};
 	template <typename T> using remove_member_pointer_t = typename remove_member_pointer<T>::type;
 
-	[[noreturn, gnu::visibility("hidden")]] void block_forever();
+	[[noreturn]] void block_forever();
 }

@@ -1,3 +1,6 @@
+// atomic.tpp:
+//	class Atomic;
+
 # pragma once
 # include <mirism/detail_/misc/atomic.hpp>
 

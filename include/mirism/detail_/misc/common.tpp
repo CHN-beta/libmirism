@@ -1,8 +1,21 @@
+// common.tpp:
+//	uint128_t;
+//	namespace literals;
+//	std::regex operator""_re(...);
+//	namespace stream_operators;
+//	template <typename T> ... remove_member_pointer_t;
+//	void block_forever();
+//	std::size_t hash(Ts&&... objs);
+//	void unused(auto&&...);
+//	struct CaseInsensitiveStringLess;
+
 # pragma once
+# include <boost/algorithm/string.hpp>
 # include <mirism/detail_/misc/common.hpp>
 
 namespace mirism
 {
+	void unused(auto&&...) {}
 	template<typename... Ts> std::size_t hash(Ts&&... objs)
 	{
 		std::size_t result = 0;
