@@ -4,7 +4,7 @@
 namespace mirism
 {
 	// store a reference to an lvalue, or a value (instead of a reference) copy or moved from an rvalue
-	template <decayed_type T> class SmartRef
+	template <typename T> class SmartRef
 	{
 		protected: std::unique_ptr<T> Ptr_;
 		protected: T& Ref_;
