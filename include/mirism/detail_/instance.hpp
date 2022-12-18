@@ -11,39 +11,6 @@ namespace mirism
 	// Framework object of libmirism.
 	class Instance : public Logger::ObjectMonitor<Instance>
 	{
-
-		// All the content in EndPoint, Request and Response should be legal (e.g. Host only contains legal characters,
-		// and so on).
-		public: enum class HttpScheme {Http, Https};
-		public: enum class HttpVersion {v1_0, v1_1, v2, v3};
-		public: enum class HttpMethod {Connect, Delete, Get, Head, Options, Patch, Post, Put, Trace};
-		public: struct Request
-		{
-			std::optional<HttpScheme> Scheme;
-			std::optional<HttpVersion> Version;
-			HttpMethod Method;
-			std::string Path;
-			std::multimap<std::string, std::string, CaseInsensitiveStringLess> Headers;
-			std::shared_ptr<Pipe> Body;
-			struct
-			{
-				std::optional<std::variant<std::uint32_t, std::array<std::uint16_t, 8>>> IP;
-				std::optional<std::uint16_t> Port;
-			} Remote, Local;
-			std::shared_ptr<Atomic<bool>> Cancelled;
-		};
-		public: struct Response
-		{
-			std::uint16_t Status;
-			std::multimap<std::string, std::string, CaseInsensitiveStringLess> Headers;
-			std::shared_ptr<Pipe> Body;
-			struct
-			{
-				std::optional<std::variant<std::uint32_t, std::array<std::uint16_t, 8>>> IP;
-				std::optional<std::uint16_t> Port;
-			} Remote, Local;
-		};
-
 		protected: std::shared_ptr<server::Base> Server_;
 		protected: std::shared_ptr<handler::Base> Handler_;
 		protected: std::shared_ptr<client::Base> Client_;
@@ -86,11 +53,4 @@ namespace mirism
 		public: static std::string ip_convert(const std::array<std::uint16_t, 8> ip);
 		public: static std::string ip_convert(const std::variant<std::uint32_t, std::array<std::uint16_t, 8>>& ip);
 	};
-	inline namespace stream_operators
-	{
-		std::ostream& operator<<(std::ostream& os, const Instance::Request& request);
-		std::ostream& operator<<(std::ostream& os, const Instance::Response& response);
-	}
 }
-template<> struct fmt::formatter<mirism::Instance::Request> : public fmt::ostream_formatter {};
-template<> struct fmt::formatter<mirism::Instance::Response> : public fmt::ostream_formatter {};

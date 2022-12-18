@@ -1,0 +1,1 @@
+* `operator<<` 应该写到一个单独的命名空间 `inline namespce stream_operators` 里，还是写到对应类所在的命名空间里？

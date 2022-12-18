@@ -30,6 +30,10 @@ add_executable(test_misc_pipe misc/pipe.cpp)
 target_link_libraries(test_misc_pipe libmirism)
 add_test(misc_pipe test_misc_pipe)
 
+add_executable(test_misc_called_by misc/called_by.cpp)
+target_link_libraries(test_misc_called_by libmirism)
+add_test(misc_called_by test_misc_called_by)
+
 add_executable(test_client_base client/base.cpp)
 target_link_libraries(test_client_base libmirism)
 add_test(client_base test_client_base)
