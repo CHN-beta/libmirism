@@ -180,9 +180,9 @@ namespace mirism
 			std::unique_lock<std::recursive_mutex>&& lock,
 			std::experimental::observer_ptr<std::conditional_t<Const, const Atomic<T>, Atomic<T>>> value
 		)
-	:	Lock_{std::move(lock)}, Value_{value} {}
+		: Lock_{std::move(lock)}, Value_{value} {}
 	template <decayed_type T> template <bool Const> Atomic<T>::Guard<Const>::Guard(Guard<Const>&& other)
-	:	Lock_{std::move(other.Lock_)}, Value_{other.Value_} {}
+		: Lock_{std::move(other.Lock_)}, Value_{other.Value_} {}
 	template <decayed_type T> template <bool Const> Atomic<T>::Guard<Const>::~Guard()
 		{Value_->ConditionVariable_.notify_all();}
 
