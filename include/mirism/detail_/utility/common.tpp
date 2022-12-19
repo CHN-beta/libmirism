@@ -10,13 +10,13 @@
 //	struct CaseInsensitiveStringLess;
 
 # pragma once
-# include <boost/algorithm/string.hpp>
+# include <boost/functional/hash.hpp>
 # include <mirism/detail_/utility/common.hpp>
 
 namespace mirism
 {
-	void unused(auto&&...) {}
-	template<typename... Ts> std::size_t hash(Ts&&... objs)
+	inline void unused(auto&&...) {}
+	std::size_t hash(auto&&... objs)
 	{
 		std::size_t result = 0;
 		(boost::hash_combine(result, objs), ...);

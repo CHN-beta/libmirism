@@ -84,7 +84,7 @@ namespace mirism
 			std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - StartTime_).count()
 		));
 	}
-	template <typename T> T Logger::Guard::rtn(T&& value) const
+	template <typename T> inline T Logger::Guard::rtn(T&& value) const
 	{
 		log<Level_t::Debug>("return {} after {} ms."_f
 		(

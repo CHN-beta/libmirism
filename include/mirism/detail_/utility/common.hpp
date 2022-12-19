@@ -5,7 +5,7 @@
 
 namespace mirism
 {
-	template <typename... Ts> std::size_t hash(Ts&&... objs);
+	std::size_t hash(auto&&... objs);
 	[[gnu::always_inline]] void unused(auto&&...);
 
 	using uint128_t = __uint128_t;
