@@ -8,7 +8,7 @@
 //	concept specialization_of;
 
 # pragma once
-# include <mirism/detail_/misc/concepts.hpp>
+# include <mirism/detail_/utility/concepts.hpp>
 
 namespace mirism
 {

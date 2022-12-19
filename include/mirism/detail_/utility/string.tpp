@@ -1,5 +1,5 @@
 # pragma once
-# include <mirism/detail_/misc/string.hpp>
+# include <mirism/detail_/utility/string.hpp>
 
 namespace mirism
 {

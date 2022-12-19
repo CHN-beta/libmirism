@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.14)
-project(libmirism)
+project(libmirism VERSION 1.0.0 LANGUAGES CXX)
 enable_testing()
 include(GNUInstallDirs)
 
@@ -30,6 +30,8 @@ set(BROTLI_LIB ${BROTLI_COMMON_LIB} ${BROTLI_ENC_LIB} ${BROTLI_DEC_LIB})
 get_property(ImportedTargets DIRECTORY "${CMAKE_SOURCE_DIR}" PROPERTY IMPORTED_TARGETS)
 message("Imported targets: ${ImportedTargets}")
 message("List of compile features: ${CMAKE_CXX_COMPILE_FEATURES}")
+
+install(EXPORT MirismConfig DESTINATION share/Mirism/cmake)
 
 add_subdirectory(src)
 add_subdirectory(test)

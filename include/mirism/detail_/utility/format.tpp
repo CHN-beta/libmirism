@@ -6,7 +6,7 @@
 
 # pragma once
 # include <nameof.hpp>
-# include <mirism/detail_/misc/format.hpp>
+# include <mirism/detail_/utility/format.hpp>
 
 namespace mirism
 {

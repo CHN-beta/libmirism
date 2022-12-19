@@ -2,9 +2,9 @@
 # define BOOST_STACKTRACE_USE_BACKTRACE
 # include <boost/stacktrace.hpp>
 # include <fmt/chrono.h>
-# include <mirism/detail_/misc/logger.hpp>
-# include <mirism/detail_/misc/common.tpp>
-# include <mirism/detail_/misc/format.tpp>
+# include <mirism/detail_/utility/logger.hpp>
+# include <mirism/detail_/utility/common.tpp>
+# include <mirism/detail_/utility/format.tpp>
 
 namespace mirism
 {

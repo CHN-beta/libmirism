@@ -3,7 +3,7 @@
 # include <optional>
 # include <condition_variable>
 # include <experimental/memory>
-# include <mirism/detail_/misc/concepts.hpp>
+# include <mirism/detail_/utility/concepts.hpp>
 
 namespace mirism
 {

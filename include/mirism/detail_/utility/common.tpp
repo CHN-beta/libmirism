@@ -11,7 +11,7 @@
 
 # pragma once
 # include <boost/algorithm/string.hpp>
-# include <mirism/detail_/misc/common.hpp>
+# include <mirism/detail_/utility/common.hpp>
 
 namespace mirism
 {

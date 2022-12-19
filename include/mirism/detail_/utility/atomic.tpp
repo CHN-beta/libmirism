@@ -2,7 +2,7 @@
 //	class Atomic;
 
 # pragma once
-# include <mirism/detail_/misc/atomic.hpp>
+# include <mirism/detail_/utility/atomic.hpp>
 
 namespace mirism
 {

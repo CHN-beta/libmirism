@@ -1,6 +1,6 @@
 # pragma once
 # include <map>
-# include <mirism/detail_/misc/atomic.tpp>
+# include <mirism/detail_/utility/atomic.tpp>
 
 namespace mirism
 {

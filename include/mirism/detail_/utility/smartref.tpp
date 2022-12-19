@@ -3,7 +3,7 @@
 
 # pragma once
 # include <utility>
-# include <mirism/detail_/misc/smartref.hpp>
+# include <mirism/detail_/utility/smartref.hpp>
 
 namespace mirism
 {
