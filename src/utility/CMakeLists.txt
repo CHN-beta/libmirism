@@ -1,4 +1,4 @@
-add_library(mirism_utility SHARED common.cpp string.cpp logger.cpp compression.cpp)
+add_library(mirism_utility SHARED common.cpp compression.cpp http.cpp logger.cpp string.cpp)
 add_library(mirism::utility ALIAS mirism_utility)
 target_include_directories(mirism_utility PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../include>
