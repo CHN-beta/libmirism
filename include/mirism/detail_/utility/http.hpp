@@ -1,5 +1,6 @@
 # pragma once
 # include <map>
+# include <any>
 # include <fmt/ostream.h>
 # include <mirism/detail_/utility/atomic.tpp>
 # include <mirism/detail_/utility/common.tpp>
@@ -40,6 +41,7 @@ namespace mirism::http
 			std::optional<std::uint16_t> Port;
 		} Remote, Local;
 		std::shared_ptr<Atomic<bool>> Cancelled;
+		std::map<std::string, std::any> Extra;
 	};
 	struct Response_t
 	{
@@ -51,6 +53,8 @@ namespace mirism::http
 			std::optional<std::variant<std::uint32_t, std::array<std::uint16_t, 8>>> IP;
 			std::optional<std::uint16_t> Port;
 		} Remote, Local;
+		std::shared_ptr<Atomic<bool>> Cancelled;
+		std::map<std::string, std::any> Extra;
 	};
 }
 

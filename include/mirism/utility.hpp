@@ -5,6 +5,7 @@
 # include <mirism/detail_/utility/compression.hpp>
 # include <mirism/detail_/utility/concepts.tpp>
 # include <mirism/detail_/utility/format.tpp>
+# include <mirism/detail_/utility/http.hpp>
 # include <mirism/detail_/utility/logger.tpp>
 # include <mirism/detail_/utility/smartref.tpp>
 # include <mirism/detail_/utility/string.tpp>
