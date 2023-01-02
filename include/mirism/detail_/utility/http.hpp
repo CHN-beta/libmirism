@@ -13,7 +13,6 @@ namespace mirism::http
 	{
 		std::string Name;
 		bool HasBody;
-
 		static const Method_t Connect;
 		static const Method_t Delete;
 		static const Method_t Get;
@@ -24,20 +23,23 @@ namespace mirism::http
 		static const Method_t Put;
 		static const Method_t Trace;
 	};
+	using Headers_t = std::multimap<std::string, std::string, CaseInsensitiveStringLess>;
+	using Body_t = std::shared_ptr<std::variant<std::string, std::deque<std::string>>>;
+	using Ip_t = std::optional<std::variant<std::uint32_t, std::array<std::uint16_t, 8>>>;
 	struct Request_t
 	{
 		std::optional<Scheme_t> Scheme;
 		std::optional<Version_t> Version;
 		Method_t Method;
 		std::string Path;
-		std::multimap<std::string, std::string, CaseInsensitiveStringLess> Headers;
+		Headers_t Headers;
 
 		// use std::string to store whole body, or use std::deque<std::string>> to store body in parts
 		// empty string in deque means end of body
-		std::optional<std::variant<std::string, std::deque<std::string>>> Body;
+		Body_t Body;
 		struct
 		{
-			std::optional<std::variant<std::uint32_t, std::array<std::uint16_t, 8>>> IP;
+			Ip_t Ip;
 			std::optional<std::uint16_t> Port;
 		} Remote, Local;
 		std::shared_ptr<Atomic<bool>> Cancelled;
@@ -46,11 +48,11 @@ namespace mirism::http
 	struct Response_t
 	{
 		std::uint16_t Status;
-		std::multimap<std::string, std::string, CaseInsensitiveStringLess> Headers;
-		std::optional<std::variant<std::string, std::deque<std::string>>> Body;
+		Headers_t Headers;
+		Body_t Body;
 		struct
 		{
-			std::optional<std::variant<std::uint32_t, std::array<std::uint16_t, 8>>> IP;
+			Ip_t Ip;
 			std::optional<std::uint16_t> Port;
 		} Remote, Local;
 		std::shared_ptr<Atomic<bool>> Cancelled;
