@@ -10,6 +10,6 @@ namespace mirism::server
 		// start server, and handle requests using the callback. Return a function to stop the server, or nullptr if
 		//	the server is already running or the call is blocked until the server is stopped.
 		public: virtual std::function<void()> operator()
-			(std::function<std::optional<http::Response_t>(http::Request_t)> callback) = 0;
+			(std::function<std::unique_ptr<http::Response_t>(std::unique_ptr<http::Request_t>)> callback) = 0;
 	};
 }

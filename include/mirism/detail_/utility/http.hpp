@@ -23,8 +23,8 @@ namespace mirism::http
 		static const Method_t Put;
 		static const Method_t Trace;
 	};
-	using Headers_t = std::multimap<std::string, std::string, CaseInsensitiveStringLess>;
-	using Body_t = std::shared_ptr<std::variant<std::string, std::deque<std::string>>>;
+	using Headers_t = Atomic<std::multimap<std::string, std::string, CaseInsensitiveStringLess>>;
+	using Body_t = std::shared_ptr<std::variant<Atomic<std::string>, Atomic<std::deque<std::string>>>>;
 	using Ip_t = std::optional<std::variant<std::uint32_t, std::array<std::uint16_t, 8>>>;
 	struct Request_t
 	{
