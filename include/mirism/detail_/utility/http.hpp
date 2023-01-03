@@ -43,7 +43,7 @@ namespace mirism::http
 			std::optional<std::uint16_t> Port;
 		} Remote, Local;
 		std::shared_ptr<Atomic<bool>> Cancelled;
-		std::map<std::string, std::any> Extra;
+		Atomic<std::map<std::string, std::any>> Extra;
 	};
 	struct Response_t
 	{
@@ -56,7 +56,7 @@ namespace mirism::http
 			std::optional<std::uint16_t> Port;
 		} Remote, Local;
 		std::shared_ptr<Atomic<bool>> Cancelled;
-		std::map<std::string, std::any> Extra;
+		Atomic<std::map<std::string, std::any>> Extra;
 	};
 }
 
