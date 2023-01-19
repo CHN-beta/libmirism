@@ -2,6 +2,7 @@
 # include <map>
 # include <any>
 # include <fmt/ostream.h>
+# include <cppcoro/generator.hpp>
 # include <mirism/detail_/utility/atomic.tpp>
 # include <mirism/detail_/utility/common.tpp>
 
@@ -24,7 +25,7 @@ namespace mirism::http
 		static const Method_t Trace;
 	};
 	using Headers_t = Atomic<std::multimap<std::string, std::string, CaseInsensitiveStringLess>>;
-	using Body_t = std::shared_ptr<std::variant<Atomic<std::string>, Atomic<std::deque<std::string>>>>;
+	using Body_t = std::shared_ptr<std::variant<Atomic<std::string>, Atomic<std::deque<std::optional<std::string>>>>>;
 	using Ip_t = std::optional<std::variant<std::uint32_t, std::array<std::uint16_t, 8>>>;
 	struct Request_t
 	{
@@ -58,6 +59,13 @@ namespace mirism::http
 		std::shared_ptr<Atomic<bool>> Cancelled;
 		Atomic<std::map<std::string, std::any>> Extra;
 	};
+
+	// for convenience
+	enum class ReadResult {Success, EndOfFile, Timeout, Cancelled, OtherError};
+	std::pair<ReadResult, std::optional<std::string>> ReadWholeBody
+		(Body_t body, std::shared_ptr<Atomic<bool>> cancelled, std::chrono::steady_clock::duration timeout);
+	cppcoro::generator<std::pair<ReadResult, std::optional<std::string>>> ReadNextBodyPart
+		(Body_t body, std::shared_ptr<Atomic<bool>> cancelled, std::chrono::steady_clock::duration timeout);
 }
 
 namespace mirism::inline stream_operators
