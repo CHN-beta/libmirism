@@ -1,32 +1,35 @@
-// concepts.hpp:
-//	concept decayed_type;
-//	concept complete_type;
-//	concept {{im,ex}plicitly_,}convertible_{to,from};
-//	concept consteval_invokable;
-//	concept enumerable;
-// concepts.tpp:
-//	concept specialization_of;
-
 # pragma once
 # include <mirism/detail_/utility/concepts.hpp>
 
 namespace mirism
 {
-	template <typename T1, typename T2> consteval bool detail_::specialization_of_detail_::params_is_ok()
+	template <typename ClassProvidedArgs, typename ClassActualArgs> consteval bool
+		detail_::specialization_of_detail_::check_provided_args()
 	{
-		if constexpr (std::tuple_size_v<T1> == 0)
+		if constexpr (std::tuple_size_v<ClassProvidedArgs> == 0)
 			return true;
-		else if constexpr (std::tuple_size_v<T2> == 0)
+		else if constexpr (std::tuple_size_v<ClassActualArgs> == 0)
 			return false;
-		else if constexpr (std::same_as<std::tuple_element_t<0, T1>, std::tuple_element_t<0, T2>>)
-			return params_is_ok<typename DropFirstMemberOfTuple<T1>::type, typename DropFirstMemberOfTuple<T2>::type>();
+		else if constexpr
+			(std::same_as<std::tuple_element_t<0, ClassProvidedArgs>, std::tuple_element_t<0, ClassActualArgs>>)
+			return check_provided_args
+			<
+				typename ClassTemplateDropFirstMemberOfTupleHelper<ClassProvidedArgs>::Class,
+				typename ClassTemplateDropFirstMemberOfTupleHelper<ClassActualArgs>::Class
+			>();
 		else
 			return false;
 	}
-	template <typename T, template <typename...> typename Template> template <typename... ProvidedArgs> consteval
-		bool detail_::specialization_of_detail_::Helper<T, Template>::check_provided_args()
+	template <typename Class, template <typename...> typename ClassTemplate> template <typename... ClassProvidedArgs>
+		consteval bool detail_::specialization_of_detail_::ClassTemplateSpecializationOfHelper
+			<Class, ClassTemplate>::check_provided_args()
 		{return false;}
-	template <template <typename...> typename Template, typename... Args> template <typename... ProvidedArgs> consteval
-		bool detail_::specialization_of_detail_::Helper<Template<Args...>, Template>::check_provided_args()
-		{return params_is_ok<std::tuple<ProvidedArgs...>, std::tuple<Args...>>();}
+	template <template <typename...> typename ClassTemplate, typename... ClassActualArgs>
+		template <typename... ClassProvidedArgs> consteval
+		bool detail_::specialization_of_detail_::ClassTemplateSpecializationOfHelper
+			<ClassTemplate<ClassActualArgs...>, ClassTemplate>::check_provided_args()
+		{
+			return specialization_of_detail_::check_provided_args
+				<std::tuple<ClassProvidedArgs...>, std::tuple<ClassActualArgs...>>();
+		}
 }
