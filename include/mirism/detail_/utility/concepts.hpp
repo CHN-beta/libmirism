@@ -4,44 +4,37 @@
 
 namespace mirism
 {
-	template <typename Class> concept ConceptDecayed = std::same_as<std::decay_t<Class>, Class>;
+	template <typename T> concept DecayedType = std::same_as<std::decay_t<T>, T>;
 
 	namespace detail_::specialization_of_detail_
 	{
-		template <typename Class> struct ClassTemplateDropFirstMemberOfTupleHelper;
-		template <typename ClassFirst, typename... ClassOthers> struct
-			ClassTemplateDropFirstMemberOfTupleHelper<std::tuple<ClassFirst, ClassOthers...>>
-			{using Class = std::tuple<ClassOthers...>;};
-		template <typename ClassProvidedArgs, typename ClassActualArgs> consteval bool check_provided_args();
-		template <typename Class, template <typename...> typename ClassTemplate>
-			struct ClassTemplateSpecializationOfHelper
-			{template <typename... ClassProvidedArgs> consteval static bool check_provided_args();};
-		template <template <typename...> typename ClassTemplate, typename... ClassActualArgs>
-			struct ClassTemplateSpecializationOfHelper<ClassTemplate<ClassActualArgs...>, ClassTemplate>
-			{template <typename... ClassProvidedArgs> consteval static bool check_provided_args();};
+		template <typename Tuple> struct DropFirstMemberOfTupleHelper;
+		template <typename First, typename... Others> struct DropFirstMemberOfTupleHelper<std::tuple<First, Others...>>
+			{using Type = std::tuple<Others...>;};
+		template <typename ProvidedArgs, typename ActualArgs> consteval bool check_provided_args();
+		template <typename Class, template <typename...> typename Template> struct SpecializationOfHelper
+			{template <typename... ProvidedArgs> consteval static bool check_provided_args();};
+		template <template <typename...> typename Template, typename... ActualArgs>
+			struct SpecializationOfHelper<Template<ActualArgs...>, Template>
+			{template <typename... ProvidedArgs> consteval static bool check_provided_args();};
 	}
-	template <typename Class, template <typename...> typename ClassTemplate, typename... ClassProvidedArgs>
-		concept ConceptSpecializationOf
-		= detail_::specialization_of_detail_::ClassTemplateSpecializationOfHelper<std::decay_t<Class>, ClassTemplate>
-			::template check_provided_args<ClassProvidedArgs...>();
+	template <typename Class, template <typename...> typename Template, typename... ProvidedArgs>
+		concept SpecializationOf
+		= detail_::specialization_of_detail_::SpecializationOfHelper<std::decay_t<Class>, Template>
+			::template check_provided_args<ProvidedArgs...>();
 
-	template <typename Class> concept ConceptCompleted = sizeof(Class) == sizeof(Class);
+	template <typename T> concept CompletedType = sizeof(T) == sizeof(T);
 
-	template <typename ClassFrom, typename ClassTo> concept ConceptImplicitlyConvertibleTo
-		= std::is_convertible<ClassFrom, ClassTo>::value;
-	template <typename ClassTo, typename ClassFrom> concept ConceptImplicitlyConvertibleFrom
-		= std::is_convertible<ClassFrom, ClassTo>::value;
-	template <typename ClassFrom, typename ClassTo> concept ConceptExplicitlyConvertibleTo
-		= std::is_constructible<ClassTo, ClassFrom>::value;
-	template <typename ClassTo, typename ClassFrom> concept ConceptExplicitlyConvertibleFrom
-		= std::is_constructible<ClassTo, ClassFrom>::value;
-	template <typename ClassFrom, typename ClassTo> concept ConceptConvertibleTo
-		= ConceptImplicitlyConvertibleTo<ClassFrom, ClassTo> || ConceptExplicitlyConvertibleTo<ClassFrom, ClassTo>;
-	template <typename ClassFrom, typename ClassTo> concept ConceptConvertibleFrom
-		= ConceptConvertibleTo<ClassFrom, ClassTo>;
+	template <typename From, typename To> concept ImplicitlyConvertibleTo = std::is_convertible<From, To>::value;
+	template <typename To, typename From> concept ImplicitlyConvertibleFrom = std::is_convertible<From, To>::value;
+	template <typename From, typename To> concept ExplicitlyConvertibleTo = std::is_constructible<To, From>::value;
+	template <typename To, typename From> concept ExplicitlyConvertibleFrom = std::is_constructible<To, From>::value;
+	template <typename From, typename To> concept ConvertibleTo
+		= ImplicitlyConvertibleTo<From, To> || ExplicitlyConvertibleTo<From, To>;
+	template <typename From, typename To> concept ConvertibleFrom = ConvertibleTo<From, To>;
 
-	template <typename ClassFunction, auto... Args> concept ConceptConstevalInvokable
-		= requires() {typename std::type_identity_t<int[(ClassFunction()(Args...), 1)]>;};
+	template <typename Function, auto... Args> concept ConstevalInvokable
+		= requires() {typename std::type_identity_t<int[(Function()(Args...), 1)]>;};
 
-	template <typename Class> concept ConceptEnumerable = std::is_enum_v<Class>;
+	template <typename T> concept Enumerable = std::is_enum_v<T>;
 }

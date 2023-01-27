@@ -1,4 +1,5 @@
 # include <mirism/detail_/httplib/client.hpp>
+# define CPPHTTPLIB_OPENSSL_SUPPORT
 # include <httplib.h>
 
 namespace mirism::client
@@ -6,6 +7,10 @@ namespace mirism::client
 	std::unique_ptr<http::Response_t> Httplib::operator()(std::unique_ptr<http::Request_t> request)
 	{
 		Logger::Guard log{request};
+
+		// not implemented:
+		// request->Version
+		// response->Remote,Local
 
 		if (!request) [[unlikely]]
 			return nullptr;

@@ -23,7 +23,7 @@ namespace mirism
 		return result;
 	}
 
-	template <typename T> constexpr bool CaseInsensitiveStringLess::operator()(const T& lhs, const T& rhs) const
+	template <typename T> constexpr bool CaseInsensitiveStringLess_t::operator()(const T& lhs, const T& rhs) const
 	{
 		return std::lexicographical_compare
 		(

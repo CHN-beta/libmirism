@@ -1,21 +1,21 @@
 # pragma once
-# include <mirism/detail_/framework/content/base.hpp>
+# include <mirism/detail_/handler/content/base.hpp>
 
-namespace mirism::site
+namespace mirism::site_t
 {
-	template <typename AllowedRequestContentTypes = void, typename AllowedResponseContentTypes = void> class Base;
-	template <> class Base<>
+	template <typename AllowedRequestContentTypes_t = void, typename AllowedResponseContentTypes_t = void> class Base_t;
+	template <> class Base_t<>
 	{
 		public: virtual ~Base() = default;
-		public: using ContentTypeMap
-			= std::unordered_map<std::string, std::function<std::unique_ptr<content::Base<>>()>>;
+		public: using ContentTypeMap_t
+			= std::unordered_map<std::string, std::function<std::unique_ptr<content::Base_t<>>()>>;
 
-		public: virtual const ContentTypeMap& get_request_content_map() const = 0;
-		public: virtual const ContentTypeMap& get_response_content_map() const = 0;
+		public: virtual const ContentTypeMap_t& get_request_content_map() const = 0;
+		public: virtual const ContentTypeMap_t& get_response_content_map() const = 0;
 
-		public: virtual std::vector<handler::Base::PatchTiming, handler::Base::Patch> get_patch_list() const = 0;
+		public: virtual std::vector<handler::Base::PatchTiming_t, handler::Base_t::Patch_t> get_patch_list() const = 0;
 
-		public: virtual const DomainStrategy& get_domain_strategy() const = 0;
+		public: virtual const DomainStrategy_t& get_domain_strategy() const = 0;
 
 		// 获取该类对应的所有 Group
 		virtual

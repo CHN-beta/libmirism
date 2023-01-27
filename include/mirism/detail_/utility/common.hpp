@@ -19,15 +19,20 @@ namespace mirism
 
 	inline namespace stream_operators {using namespace magic_enum::iostream_operators;}
 
-	struct CaseInsensitiveStringLess
+	struct CaseInsensitiveStringLess_t
 	{
-		template <typename T> [[gnu::visibility("hidden")]] constexpr
-			bool operator()(const T& lhs, const T& rhs) const;
+		template <typename String_t> [[gnu::visibility("hidden")]] constexpr
+			bool operator()(const String_t& lhs, const String_t& rhs) const;
 	};
 
-	template <typename T> struct remove_member_pointer {using type = T;};
-	template <typename C, typename T> struct remove_member_pointer<T C::*> {using type = T;};
-	template <typename T> using remove_member_pointer_t = typename remove_member_pointer<T>::type;
+	namespace detail_
+	{
+		template <typename Self_t> struct RemoveMemberPointerHelper_T {using type = Self_t;};
+		template <typename Class_t, typename Member_t> struct RemoveMemberPointerHelper_T<Member_t Class_t::*>
+			{using type = Member_t;};
+	}
+	template <typename MemberPointer_t> using RemoveMemberPointer_T
+		= typename detail_::RemoveMemberPointerHelper_T<MemberPointer_t>::type;
 
 	[[noreturn]] void block_forever();
 }

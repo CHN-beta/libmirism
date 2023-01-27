@@ -3,33 +3,31 @@
 
 namespace mirism
 {
-	template <typename ClassProvidedArgs, typename ClassActualArgs> consteval bool
+	template <typename ProvidedArgs, typename ActualArgs> consteval bool
 		detail_::specialization_of_detail_::check_provided_args()
 	{
-		if constexpr (std::tuple_size_v<ClassProvidedArgs> == 0)
+		if constexpr (std::tuple_size_v<ProvidedArgs> == 0)
 			return true;
-		else if constexpr (std::tuple_size_v<ClassActualArgs> == 0)
+		else if constexpr (std::tuple_size_v<ActualArgs> == 0)
 			return false;
 		else if constexpr
-			(std::same_as<std::tuple_element_t<0, ClassProvidedArgs>, std::tuple_element_t<0, ClassActualArgs>>)
+			(std::same_as<std::tuple_element_t<0, ProvidedArgs>, std::tuple_element_t<0, ActualArgs>>)
 			return check_provided_args
 			<
-				typename ClassTemplateDropFirstMemberOfTupleHelper<ClassProvidedArgs>::Class,
-				typename ClassTemplateDropFirstMemberOfTupleHelper<ClassActualArgs>::Class
+				typename DropFirstMemberOfTupleHelper<ProvidedArgs>::Type,
+				typename DropFirstMemberOfTupleHelper<ActualArgs>::Type
 			>();
 		else
 			return false;
 	}
-	template <typename Class, template <typename...> typename ClassTemplate> template <typename... ClassProvidedArgs>
-		consteval bool detail_::specialization_of_detail_::ClassTemplateSpecializationOfHelper
-			<Class, ClassTemplate>::check_provided_args()
+	template <typename Class, template <typename...> typename Template> template <typename... ProvidedArgs> consteval
+		bool detail_::specialization_of_detail_::SpecializationOfHelper<Class, Template>::check_provided_args()
 		{return false;}
-	template <template <typename...> typename ClassTemplate, typename... ClassActualArgs>
-		template <typename... ClassProvidedArgs> consteval
-		bool detail_::specialization_of_detail_::ClassTemplateSpecializationOfHelper
-			<ClassTemplate<ClassActualArgs...>, ClassTemplate>::check_provided_args()
+	template <template <typename...> typename Template, typename... ActualArgs> template <typename... ProvidedArgs>
+		consteval bool detail_::specialization_of_detail_::SpecializationOfHelper
+			<Template<ActualArgs...>, Template>::check_provided_args()
 		{
 			return specialization_of_detail_::check_provided_args
-				<std::tuple<ClassProvidedArgs...>, std::tuple<ClassActualArgs...>>();
+				<std::tuple<ProvidedArgs...>, std::tuple<ActualArgs...>>();
 		}
 }
