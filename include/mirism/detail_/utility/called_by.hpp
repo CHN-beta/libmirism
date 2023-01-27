@@ -2,9 +2,9 @@
 
 namespace mirism
 {
-	template <typename T> class CalledBy
+	template <typename ClassAllowed> class ClassTemplateCalledBy
 	{
-		protected: CalledBy() = default;
-		friend T;
+		protected: ClassTemplateCalledBy() = default;
+		friend ClassAllowed;
 	};
 }
