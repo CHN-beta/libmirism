@@ -3,12 +3,11 @@
 
 namespace mirism::client
 {
-	class ClassBase
+	class Base
 	{
-		public: virtual ~ClassBase() = default;
+		public: virtual ~Base() = default;
 
 		// fetch a request from upstream
-		public: virtual std::unique_ptr<http::ClassResponse> operator()
-			(std::unique_ptr<http::ClassRequest> request) = 0;
+		public: virtual std::unique_ptr<http::Response> operator()(std::unique_ptr<http::Request> request) = 0;
 	};
 }
