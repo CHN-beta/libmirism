@@ -24,7 +24,7 @@ namespace mirism
 		{
 			std::experimental::observer_ptr<std::ostream> Stream;
 			std::shared_ptr<std::ostream> StreamStorage;
-			Level Level;
+			Logger::Level Level;
 		};
 		protected: static Atomic<std::optional<LoggerConfig_>> LoggerConfig_;
 		public: static void init(std::experimental::observer_ptr<std::ostream> stream, Level level);

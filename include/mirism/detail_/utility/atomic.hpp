@@ -44,11 +44,11 @@ namespace mirism
 		// At the end of non-const overload, ConditionVariable_.notify_all() is called.
 		public: template <typename Function, typename ConditionFunction>
 			auto apply(Function&& function, ConditionFunction&& condition_function) const -> decltype(function(Value_))
-			requires requires() {function(Value_); {condition_function(Value_)} -> convertible_to<bool>;};
+			requires requires() {function(Value_); {condition_function(Value_)} -> ConvertibleTo<bool>;};
 		public: template <typename Function, typename ConditionFunction>
 			auto apply(Function&& function, ConditionFunction&& condition_function) -> decltype(function(Value_))
 			requires requires()
-			{function(Value_); {condition_function(std::declval<const Value&>())} -> convertible_to<bool>;};
+			{function(Value_); {condition_function(std::declval<const ValueType&>())} -> ConvertibleTo<bool>;};
 
 		// Wait for some time, until condition funciton returns true and apply a function to stored value and return the
 		// result (with std::optional wrapped); if timeout, return false or std::nullopt.
@@ -59,7 +59,7 @@ namespace mirism
 		) const
 			-> std::conditional_t
 				<std::same_as<decltype(function(Value_)), void>, bool, std::optional<decltype(function(Value_))>>
-			requires requires() {function(Value_); {condition_function(Value_)} -> convertible_to<bool>;};
+			requires requires() {function(Value_); {condition_function(Value_)} -> ConvertibleTo<bool>;};
 		public: template <typename Function, typename ConditionFunction> auto apply
 		(
 			Function&& function, ConditionFunction&& condition_function, std::chrono::steady_clock::duration timeout
@@ -67,14 +67,14 @@ namespace mirism
 			-> std::conditional_t
 				<std::same_as<decltype(function(Value_)), void>, bool, std::optional<decltype(function(Value_))>>
 			requires requires()
-			{function(Value_); {condition_function(std::declval<const ValueType&>())} -> convertible_to<bool>;};
+			{function(Value_); {condition_function(std::declval<const ValueType&>())} -> ConvertibleTo<bool>;};
 
 		// Wait until condition funciton returns true, with an optional timeout
 		public: template <typename ConditionFunction> void wait(ConditionFunction&& condition_function) const
-			requires requires() {{condition_function(Value_)} -> convertible_to<bool>;};
+			requires requires() {{condition_function(Value_)} -> ConvertibleTo<bool>;};
 		public: template <typename ConditionFunction>
 			bool wait(ConditionFunction&& condition_function, std::chrono::steady_clock::duration timeout) const
-			requires requires() {{condition_function(Value_)} -> convertible_to<bool>;};
+			requires requires() {{condition_function(Value_)} -> ConvertibleTo<bool>;};
 
 		// Attain lock from outside when constructing, and release when destructing.
 		// For non-const variant, When destructing, ConditionVariable_.notify_all() is called.
@@ -97,14 +97,14 @@ namespace mirism
 		public: Guard<true> lock() const;
 		public: Guard<false> lock();
 		public: template <typename ConditionFunction> Guard<true> lock(ConditionFunction&& condition_function) const
-			requires requires() {{condition_function(Value_)} -> convertible_to<bool>;};
+			requires requires() {{condition_function(Value_)} -> ConvertibleTo<bool>;};
 		public: template <typename ConditionFunction> Guard<false> lock(ConditionFunction&& condition_function)
-			requires requires() {{condition_function(std::declval<const ValueType&>())} -> convertible_to<bool>;};
+			requires requires() {{condition_function(std::declval<const ValueType&>())} -> ConvertibleTo<bool>;};
 		public: template <typename ConditionFunction> std::optional<Guard<true>> lock
 			(ConditionFunction&& condition_function, std::chrono::steady_clock::duration timeout) const
-			requires requires() {{condition_function(Value_)} -> convertible_to<bool>;};
+			requires requires() {{condition_function(Value_)} -> ConvertibleTo<bool>;};
 		public: template <typename ConditionFunction> std::optional<Guard<false>> lock
 			(ConditionFunction&& condition_function, std::chrono::steady_clock::duration timeout)
-			requires requires() {{condition_function(std::declval<const ValueType&>())} -> convertible_to<bool>;};
+			requires requires() {{condition_function(std::declval<const ValueType&>())} -> ConvertibleTo<bool>;};
 	};
 }

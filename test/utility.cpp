@@ -83,7 +83,7 @@ void test_common_regex()
 }
 
 // Use `CaseInsensitiveStringLess` to create an ordered container of strings with case insensitive comparison
-std::map<std::string, int, mirism::CaseInsensitiveStringLess> test_common_case_insensitive_string_less;
+std::map<std::string, int, mirism::CaseInsensitiveStringLessComparator> test_common_case_insensitive_string_less;
 
 // Use `remove_member_pointer{,_t}` to get type that a member pointer points to. That is, for example, convert
 // `T C::*` to `T`
@@ -92,40 +92,40 @@ struct test_common_remove_member_pointer
 	int a;
 };
 static_assert(std::same_as<int,
-	mirism::remove_member_pointer_t<decltype(&test_common_remove_member_pointer::a)>>, "failed");
+	mirism::RemoveMemberPointer<decltype(&test_common_remove_member_pointer::a)>>, "failed");
 
 // concepts:
-// Use `decayed_type` to check if a type is a decayed type (that is, roughly speaking, not reference, const, volatile
+// Use `DecayedType` to check if a type is a decayed type (that is, roughly speaking, not reference, const, volatile
 // and array)
-static_assert(mirism::decayed_type<int>, "failed");
-static_assert(!mirism::decayed_type<int&>, "failed");
-static_assert(!mirism::decayed_type<const int>, "failed");
+static_assert(mirism::DecayedType<int>, "failed");
+static_assert(!mirism::DecayedType<int&>, "failed");
+static_assert(!mirism::DecayedType<const int>, "failed");
 
-// use `mirism::specialization_of` to test if a class is a specialization of a template.
+// use `mirism::SpecializationOf` to test if a class is a specialization of a template.
 // Only typename template parameter is supported.
 // std::tuple<int, float, double> is a specialization of std::tuple
-static_assert(mirism::specialization_of<std::tuple<int, float, double>, std::tuple>, "failed");
+static_assert(mirism::SpecializationOf<std::tuple<int, float, double>, std::tuple>, "failed");
 // std::tuple<int, float, double> is not a specialization of std::optional
-static_assert(!mirism::specialization_of<std::tuple<int, float, double>, std::optional>, "failed");
+static_assert(!mirism::SpecializationOf<std::tuple<int, float, double>, std::optional>, "failed");
 // std::tuple<int, float, double> is a specialization of std::tuple, and first two template parameters are int and float
-static_assert(mirism::specialization_of<std::tuple<int, float, double>, std::tuple, int, float>, "failed");
+static_assert(mirism::SpecializationOf<std::tuple<int, float, double>, std::tuple, int, float>, "failed");
 // do not support non-type template parameter
-// static_assert(mirism::specialization_of<std::array<int, 3>, std::array, "failed");
+// static_assert(mirism::SpecializationOf<std::array<int, 3>, std::array, "failed");
 // It is useful to announce that "I only accept the specialization of specific template as template parameter"
-template<mirism::specialization_of<std::optional> T> struct i_only_accept_optional {};
-template<mirism::specialization_of<std::tuple> T> struct i_only_accept_tuple {};
+template<mirism::SpecializationOf<std::optional> T> struct i_only_accept_optional {};
+template<mirism::SpecializationOf<std::tuple> T> struct i_only_accept_tuple {};
 
-// use `mirism::complete_type` to check if a type is complete until now (that is, when the compiler reached this line).
+// use `mirism::CompletedType` to check if a type is complete until now (that is, when the compiler reached this line).
 // however, if you check both before and after a type get completed, there will be a wierd complile error.
-struct TestCompleteType;
-// static_assert(!mirism::complete_type<TestCompleteType>, "failed");	// uncomment this causes the next assert failed
-struct TestCompleteType {int a;};
-static_assert(mirism::complete_type<TestCompleteType>, "failed");
+struct TestCompletedType;
+// static_assert(!mirism::CompletedType<TestCompleteType>, "failed");	// uncomment this causes the next assert failed
+struct TestCompletedType {int a;};
+static_assert(mirism::CompletedType<TestCompletedType>, "failed");
 
-// use `mirism::{{im,ex}plicitly_,}convertible_{to,from}` to check if a type is convertible to another type.
-static_assert(mirism::implicitly_convertible_to<int, float>, "failed");
+// use `mirism::{{Im,Ex}plicitly,}Convertible{To,From}` to check if a type is convertible to another type.
+static_assert(mirism::ImplicitlyConvertibleTo<int, float>, "failed");
 
-// use `mirism::consteval_invokable` to check a consteval function could be invoked by these parameters or not.
+// use `mirism::ConstevalInvokable` to check a consteval function could be invoked by these parameters or not.
 // However, you should manually wrap it as operator() of a class.
 consteval void test_consteval_invokable(int a, int b)
 {
@@ -133,13 +133,13 @@ consteval void test_consteval_invokable(int a, int b)
 		throw "";
 }
 struct TestConstevalInvokable {consteval void operator()(int a, int b) const {test_consteval_invokable(a, b);}};
-static_assert(!mirism::consteval_invokable<TestConstevalInvokable, 1, -2>, "failed");
-static_assert(mirism::consteval_invokable<TestConstevalInvokable, 1, 2>, "failed");
+static_assert(!mirism::ConstevalInvokable<TestConstevalInvokable, 1, -2>, "failed");
+static_assert(mirism::ConstevalInvokable<TestConstevalInvokable, 1, 2>, "failed");
 
-// use `enumarable` to check if a type is an enum type
+// use `Enumarable` to check if a type is an enum type
 enum class TestEnum {a, b, c};
-static_assert(mirism::enumerable<TestEnum>, "failed");
-static_assert(!mirism::enumerable<int>, "failed");
+static_assert(mirism::Enumerable<TestEnum>, "failed");
+static_assert(!mirism::Enumerable<int>, "failed");
 
 // format:
 void test_format()
@@ -184,7 +184,7 @@ int test_logger(int arg1, float arg2)
 	mirism::Logger::Guard log{arg1, arg2};
 
 	// use Logger::Guard to log something.
-	log.log<mirism::Logger::Level_t::Info>("{} {}"_f("hello", "world"));
+	log.log<mirism::Logger::Level::Info>("{} {}"_f("hello", "world"));
 
 	// use operator() to print a simple message, indicating the program reached here.
 	// only log level >= Debug will be printed.
@@ -216,11 +216,11 @@ void test_smartref()
 // using `mirism::stream_operators::operator<<` to print a `mirism::BasicStaticString`.
 // `StaticString` and `specialization_of_static_string` are char versions of basic ones.
 template <typename S> struct TestBasicStaticString;
-template <mirism::specialization_of_basic_static_string S> struct TestBasicStaticString<S>
+template <mirism::SpecializationOfBasicStaticString S> struct TestBasicStaticString<S>
 {
 	constexpr static bool happy = false;
 };
-template <mirism::specialization_of_basic_static_string<char8_t> S> struct TestBasicStaticString<S>
+template <mirism::SpecializationOfBasicStaticString<char8_t> S> struct TestBasicStaticString<S>
 {
 	constexpr static bool happy = true; // all char8_t string is happy
 };
@@ -248,7 +248,7 @@ void test_basic_fixed_string()
 {
 	// same as TestFixedString<"hello"_fs> a, b, c;
 	TestBasicFixedString<"hello"> a, b, c;	// wow, c++ now supports string as template parameter!
-	static_assert(mirism::specialization_of_basic_fixed_string<decltype("hello"_fs), char>, "failed");
+	static_assert(mirism::SpecializationOfBasicFixedString<decltype("hello"_fs), char>, "failed");
 }
 
 // a `BasicVariableString` is in a similar way to `BasicFixedString`, but with a variable size, at most N.

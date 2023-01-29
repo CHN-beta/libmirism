@@ -77,7 +77,7 @@ namespace mirism
 	template <DecayedType ValueType> template <typename Function, typename ConditionFunction>
 		auto Atomic<ValueType>::apply(Function&& function, ConditionFunction&& condition_function) const
 		-> decltype(function(Value_))
-		requires requires() {function(Value_); {condition_function(Value_)} -> convertible_to<bool>;}
+		requires requires() {function(Value_); {condition_function(Value_)} -> ConvertibleTo<bool>;}
 	{
 		std::unique_lock lock{Mutex_};
 		ConditionVariable_.wait(lock, [this, &condition_function]{return condition_function(Value_);});
@@ -87,7 +87,7 @@ namespace mirism
 		auto Atomic<ValueType>::apply(Function&& function, ConditionFunction&& condition_function)
 		-> decltype(function(Value_))
 		requires requires()
-		{function(Value_); {condition_function(std::declval<const ValueType&>())} -> convertible_to<bool>;}
+		{function(Value_); {condition_function(std::declval<const ValueType&>())} -> ConvertibleTo<bool>;}
 	{
 		std::unique_lock lock{Mutex_};
 		ConditionVariable_.wait
@@ -112,7 +112,7 @@ namespace mirism
 	) const
 		-> std::conditional_t
 			<std::same_as<decltype(function(Value_)), void>, bool, std::optional<decltype(function(Value_))>>
-		requires requires() {function(Value_); {condition_function(Value_)} -> convertible_to<bool>;}
+		requires requires() {function(Value_); {condition_function(Value_)} -> ConvertibleTo<bool>;}
 	{
 		std::unique_lock lock{Mutex_};
 		if (ConditionVariable_.wait_for(lock, timeout, [this, &condition_function]{return condition_function(Value_);}))
@@ -139,7 +139,7 @@ namespace mirism
 		-> std::conditional_t
 			<std::same_as<decltype(function(Value_)), void>, bool, std::optional<decltype(function(Value_))>>
 		requires requires() {function(Value_);
-		{condition_function(std::declval<const ValueType&>())} -> convertible_to<bool>;}
+		{condition_function(std::declval<const ValueType&>())} -> ConvertibleTo<bool>;}
 	{
 		std::unique_lock lock{Mutex_};
 		if (ConditionVariable_.wait_for(lock, timeout, [this, &condition_function]
@@ -169,14 +169,14 @@ namespace mirism
 
 	template <DecayedType ValueType> template <typename ConditionFunction>
 		void Atomic<ValueType>::wait(ConditionFunction&& condition_function) const
-		requires requires() {{condition_function(Value_)} -> convertible_to<bool>;}
+		requires requires() {{condition_function(Value_)} -> ConvertibleTo<bool>;}
 	{
 		std::unique_lock lock{Mutex_};
 		ConditionVariable_.wait(lock, [this, &condition_function]{return condition_function(Value_);});
 	}
 	template <DecayedType ValueType> template <typename ConditionFunction> bool Atomic<ValueType>::wait
 		(ConditionFunction&& condition_function, std::chrono::steady_clock::duration timeout) const
-		requires requires() {{condition_function(Value_)} -> convertible_to<bool>;}
+		requires requires() {{condition_function(Value_)} -> ConvertibleTo<bool>;}
 	{
 		std::unique_lock lock{Mutex_};
 		return ConditionVariable_.wait_for(lock, timeout, [this, &condition_function]
@@ -185,10 +185,7 @@ namespace mirism
 
 	template <DecayedType ValueType> template <bool Const>
 		Atomic<ValueType>::Guard<Const>::Guard
-		(
-			std::unique_lock<std::recursive_mutex>&& lock,
-			std::experimental::observer_ptr<std::conditional_t<Const, const Atomic<ValueType>, Atomic<ValueType>>> value
-		)
+		(std::unique_lock<std::recursive_mutex>&& lock, decltype(Value_) value, CalledBy<Atomic<ValueType>>)
 		: Lock_{std::move(lock)}, Value_{value} {}
 	template <DecayedType ValueType> template <bool Const> Atomic<ValueType>::Guard<Const>::Guard(Guard<Const>&& other)
 		: Lock_{std::move(other.Lock_)}, Value_{other.Value_} {}
@@ -206,41 +203,41 @@ namespace mirism
 		{return Value_->Value_;}
 
 	template <DecayedType ValueType> Atomic<ValueType>::Guard<true> Atomic<ValueType>::lock() const
-		{return {std::unique_lock{Mutex_}, std::experimental::make_observer(this)};}
+		{return {std::unique_lock{Mutex_}, std::experimental::make_observer(this), {}};}
 	template <DecayedType ValueType> Atomic<ValueType>::Guard<false> Atomic<ValueType>::lock()
-		{return {std::unique_lock{Mutex_}, std::experimental::make_observer(this)};}
+		{return {std::unique_lock{Mutex_}, std::experimental::make_observer(this), {}};}
 	template <DecayedType ValueType> template <typename ConditionFunction>
 		Atomic<ValueType>::Guard<true> Atomic<ValueType>::lock(ConditionFunction&& condition_function) const
-		requires requires() {{condition_function(Value_)} -> convertible_to<bool>;}
+		requires requires() {{condition_function(Value_)} -> ConvertibleTo<bool>;}
 	{
 		std::unique_lock lock{Mutex_};
 		ConditionVariable_.wait(lock, [this, &condition_function]{return condition_function(Value_);});
-		return {{std::move(lock), std::experimental::make_observer(this)}};
+		return {{std::move(lock), std::experimental::make_observer(this), {}}};
 	}
 	template <DecayedType ValueType> template <typename ConditionFunction>
 		Atomic<ValueType>::Guard<false> Atomic<ValueType>::lock(ConditionFunction&& condition_function)
-		requires requires() {{condition_function(std::declval<const ValueType&>())} -> convertible_to<bool>;}
+		requires requires() {{condition_function(std::declval<const ValueType&>())} -> ConvertibleTo<bool>;}
 	{
 		std::unique_lock lock{Mutex_};
 		ConditionVariable_.wait(lock, [this, &condition_function]
 			{return condition_function(const_cast<const ValueType&>(Value_));});
-		return {{std::move(lock), std::experimental::make_observer(this)}};
+		return {{std::move(lock), std::experimental::make_observer(this), {}}};
 	}
 	template <DecayedType ValueType> template <typename ConditionFunction>
 		std::optional<typename Atomic<ValueType>::Guard<true>> Atomic<ValueType>::lock
 		(ConditionFunction&& condition_function, std::chrono::steady_clock::duration timeout) const
-		requires requires() {{condition_function(Value_)} -> convertible_to<bool>;}
+		requires requires() {{condition_function(Value_)} -> ConvertibleTo<bool>;}
 	{
 		std::unique_lock lock{Mutex_};
 		if (ConditionVariable_.wait_for(lock, timeout, [this, &condition_function]{return condition_function(Value_);}))
-			return {{std::move(lock), std::experimental::make_observer(this)}};
+			return {{std::move(lock), std::experimental::make_observer(this), {}}};
 		else
 			return std::nullopt;
 	}
 	template <DecayedType ValueType> template <typename ConditionFunction>
 		std::optional<typename Atomic<ValueType>::Guard<false>>
 		Atomic<ValueType>::lock(ConditionFunction&& condition_function, std::chrono::steady_clock::duration timeout)
-		requires requires() {{condition_function(std::declval<const ValueType&>())} -> convertible_to<bool>;}
+		requires requires() {{condition_function(std::declval<const ValueType&>())} -> ConvertibleTo<bool>;}
 	{
 		std::unique_lock lock{Mutex_};
 		if
@@ -248,7 +245,7 @@ namespace mirism
 			ConditionVariable_.wait_for(lock, timeout, [this, &condition_function]
 				{return condition_function(const_cast<const ValueType&>(Value_));})
 		)
-			return {{std::move(lock), std::experimental::make_observer(this)}};
+			return {{std::move(lock), std::experimental::make_observer(this), {}}};
 		else
 			return std::nullopt;
 	}

@@ -23,7 +23,7 @@
 namespace mirism
 {
 	// Store a string in a static member of a class; or, use a class to represent a string.
-	template <decayed_type Char, Char... c> struct BasicStaticString
+	template <DecayedType Char, Char... c> struct BasicStaticString
 	{
 		static constexpr std::array<Char, sizeof...(c)> Array{c...};
 		static constexpr std::basic_string_view<Char> StringView{Array.data(), sizeof...(c)};
@@ -44,16 +44,16 @@ namespace mirism
 			struct SpecializationOfBasicStaticStringHelper<C, BasicStaticString<C, c...>> : std::true_type {};
 		template <typename C, C... c>
 			struct SpecializationOfBasicStaticStringHelper<void, BasicStaticString<C, c...>> : std::true_type {};
-		template <typename T, typename C> concept specialization_of_basic_static_string
+		template <typename T, typename C> concept SpecializationOfBasicStaticString
 			= SpecializationOfBasicStaticStringHelper<std::decay_t<C>, std::decay_t<T>>::value;
 	}
-	template <typename T, typename C = void> concept specialization_of_basic_static_string
-		= detail_::specialization_of_basic_static_string<T, C>
-			&& detail_::specialization_of_basic_static_string<T, void>;
-	template <typename T> concept specialization_of_static_string = specialization_of_basic_static_string<T, char>;
+	template <typename T, typename C = void> concept SpecializationOfBasicStaticString
+		= detail_::SpecializationOfBasicStaticString<T, C>
+			&& detail_::SpecializationOfBasicStaticString<T, void>;
+	template <typename T> concept SpecializationOfStaticString = SpecializationOfBasicStaticString<T, char>;
 
 	// Store a string in a fixed-size array
-	template <decayed_type Char, std::size_t N> requires std::same_as<Char, std::decay_t<Char>> struct BasicFixedString
+	template <DecayedType Char, std::size_t N> requires std::same_as<Char, std::decay_t<Char>> struct BasicFixedString
 	{
 		Char Data[N];
 		constexpr static const std::size_t Size = N - 1;
@@ -75,16 +75,16 @@ namespace mirism
 			struct SpecializationOfBasicFixedStringHelper<C, BasicFixedString<C, N>> : std::true_type {};
 		template <typename C, std::size_t N>
 			struct SpecializationOfBasicFixedStringHelper<void, BasicFixedString<C, N>> : std::true_type {};
-		template <typename T, typename C> concept specialization_of_basic_fixed_string
+		template <typename T, typename C> concept SpecializationOfBasicFixedString
 			= SpecializationOfBasicFixedStringHelper<std::decay_t<C>, std::decay_t<T>>::value;
 	}
-	template <typename T, typename C = void> concept specialization_of_basic_fixed_string
-		= detail_::specialization_of_basic_fixed_string<T, C>
-			&& detail_::specialization_of_basic_fixed_string<T, void>;
-	template <typename T> concept specialization_of_fixed_string = specialization_of_basic_fixed_string<T, char>;
+	template <typename T, typename C = void> concept SpecializationOfBasicFixedString
+		= detail_::SpecializationOfBasicFixedString<T, C>
+			&& detail_::SpecializationOfBasicFixedString<T, void>;
+	template <typename T> concept SpecializationOfFixedString = SpecializationOfBasicFixedString<T, char>;
 
 	// Store a string with at most N characters
-	template <decayed_type Char, std::size_t N> requires std::same_as<Char, std::decay_t<Char>>
+	template <DecayedType Char, std::size_t N> requires std::same_as<Char, std::decay_t<Char>>
 		struct BasicVariableString
 	{
 		Char Data[N];
@@ -106,13 +106,13 @@ namespace mirism
 			struct SpecializationOfBasicVariableStringHelper<C, BasicVariableString<C, N>> : std::true_type {};
 		template <typename C, std::size_t N>
 			struct SpecializationOfBasicVariableStringHelper<void, BasicVariableString<C, N>> : std::true_type {};
-		template <typename T, typename C> concept specialization_of_basic_variable_string
+		template <typename T, typename C> concept SpecializationOfBasicVariableString
 			= SpecializationOfBasicVariableStringHelper<std::decay_t<C>, std::decay_t<T>>::value;
 	}
-	template <typename T, typename C = void> concept specialization_of_basic_variable_string
-		= detail_::specialization_of_basic_variable_string<T, C>
-			&& detail_::specialization_of_basic_variable_string<T, void>;
-	template <typename T> concept specialization_of_variable_string = specialization_of_basic_variable_string<T, char>;
+	template <typename T, typename C = void> concept SpecializationOfBasicVariableString
+		= detail_::SpecializationOfBasicVariableString<T, C>
+			&& detail_::SpecializationOfBasicVariableString<T, void>;
+	template <typename T> concept SpecializationOfVariableString = SpecializationOfBasicVariableString<T, char>;
 
 	namespace string
 	{

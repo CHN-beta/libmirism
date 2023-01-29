@@ -23,6 +23,13 @@ namespace mirism
 			= SpecializationOf<T, std::optional> || SpecializationOf<T, std::shared_ptr>
 				|| SpecializationOf<T, std::weak_ptr> || SpecializationOf<T, std::unique_ptr>
 				|| SpecializationOf<T, std::experimental::observer_ptr>;
+		template <typename Wrap> struct UnderlyingTypeOfOptionalWrap;
+		template <typename Wrap> requires requires() {typename Wrap::value_type;}
+			struct UnderlyingTypeOfOptionalWrap<Wrap>
+			{using Type = std::remove_cvref_t<typename Wrap::value_type>;};
+		template <typename Wrap> requires requires() {typename Wrap::element_type;}
+			struct UnderlyingTypeOfOptionalWrap<Wrap>
+			{using Type = std::remove_cvref_t<typename Wrap::element_type>;};
 		template <typename T> struct FormatterReuseProxy
 		{
 			constexpr auto parse(fmt::format_parse_context& ctx)
@@ -45,11 +52,7 @@ namespace fmt
 	using namespace mirism::stream_operators;
 
 	template <typename Char, mirism::detail_::OptionalWrap Wrap> struct formatter<Wrap, Char>
-		: mirism::detail_::FormatterReuseProxy
-		<
-			std::conditional_t<requires() {typename Wrap::value_type;},
-			std::remove_cvref_t<typename Wrap::value_type>, std::remove_cvref_t<typename Wrap::element_type>>
-		>
+		: mirism::detail_::FormatterReuseProxy<typename mirism::detail_::UnderlyingTypeOfOptionalWrap<Wrap>::Type>
 	{
 		template <typename FormatContext> auto format(const Wrap& wrap, FormatContext& ctx)
 			-> std::invoke_result_t<decltype(&FormatContext::out), FormatContext>;

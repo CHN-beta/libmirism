@@ -41,7 +41,7 @@ namespace std
 		{
 			if (holds_alternative<T>(value))
 			{
-				if constexpr (mirism::formattable<T, Char>)
+				if constexpr (mirism::Formattable<T, Char>)
 					os << "({}: {})"_f(nameof::nameof_full_type<T>(), get<T>(value));
 				else
 					os << "({}: {})"_f(nameof::nameof_full_type<T>(), "non-null unformattable value");
@@ -60,10 +60,10 @@ namespace fmt
 	{
 		using namespace mirism::literals;
 		using namespace mirism::stream_operators;
-		using value_t = typename mirism::detail_::non_cv_value_type<Wrap>::type;
+		using value_t = mirism::detail_::UnderlyingTypeOfOptionalWrap<Wrap>::Type;
 		auto format_value_type = [&, this](const value_t& value)
 		{
-			if constexpr (!mirism::formattable<value_t, Char>)
+			if constexpr (!mirism::Formattable<value_t, Char>)
 				return format_to(ctx.out(), "non-null unformattable value");
 			else if constexpr (std::default_initializable<formatter<value_t>>)
 				mirism::detail_::FormatterReuseProxy<value_t>::format(value, ctx);
@@ -71,14 +71,14 @@ namespace fmt
 				format_to(ctx.out(), "{}", value);
 		};
 		format_to(ctx.out(), "(");
-		if constexpr (mirism::specialization_of<Wrap, std::optional>)
+		if constexpr (mirism::SpecializationOf<Wrap, std::optional>)
 		{
 			if (wrap)
 				format_value_type(*wrap);
 			else
 				format_to(ctx.out(), "null");
 		}
-		else if constexpr (mirism::specialization_of<Wrap, std::weak_ptr>)
+		else if constexpr (mirism::SpecializationOf<Wrap, std::weak_ptr>)
 		{
 			if (auto shared = wrap.lock())
 			{
@@ -101,7 +101,7 @@ namespace fmt
 		return format_to(ctx.out(), ")");
 	}
 
-	template <typename Char, mirism::enumerable T> constexpr
+	template <typename Char, mirism::Enumerable T> constexpr
 		auto formatter<T, Char>::parse(format_parse_context& ctx)
 		-> std::invoke_result_t<decltype(&format_parse_context::begin), format_parse_context>
 	{
@@ -116,7 +116,7 @@ namespace fmt
 		return it;
 	}
 
-	template <typename Char, mirism::enumerable T> template <typename FormatContext>
+	template <typename Char, mirism::Enumerable T> template <typename FormatContext>
 		auto formatter<T, Char>::format(const T& value, FormatContext& ctx)
 		-> std::invoke_result_t<decltype(&FormatContext::out), FormatContext>
 	{

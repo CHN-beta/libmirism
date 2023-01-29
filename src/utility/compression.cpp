@@ -53,7 +53,7 @@ namespace mirism::string
 					);
 					if (!compress_status)
 					{
-						log.log<Logger::Level_t::Error>("brotli failed");
+						log.log<Logger::Level::Error>("brotli failed");
 						BrotliEncoderDestroyInstance(instance);
 						return {};
 					}
@@ -71,7 +71,7 @@ namespace mirism::string
 		}
 		catch (...)
 		{
-			log.log<Logger::Level_t::Error>("{} failed"_f(Method));
+			log.log<Logger::Level::Error>("{} failed"_f(Method));
 			return {};
 		}
 	}
@@ -120,7 +120,7 @@ namespace mirism::string
 						|| oneshot_result == BROTLI_DECODER_RESULT_NEEDS_MORE_INPUT
 					)
 					{
-						log.log<Logger::Level_t::Error>("brotli decompress failed");
+						log.log<Logger::Level::Error>("brotli decompress failed");
 						BrotliDecoderDestroyInstance(instance);
 						return {};
 					}
@@ -138,7 +138,7 @@ namespace mirism::string
 		}
 		catch (...)
 		{
-			log.log<Logger::Level_t::Error>("{} failed"_f(Method));
+			log.log<Logger::Level::Error>("{} failed"_f(Method));
 			return {};
 		}
 	}

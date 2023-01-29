@@ -29,31 +29,31 @@ namespace mirism::http
 	using Ip = std::optional<std::variant<std::uint32_t, std::array<std::uint16_t, 8>>>;
 	struct Request
 	{
-		std::optional<Scheme> Scheme;
-		std::optional<Version> Version;
-		Method Method;
+		std::optional<http::Scheme> Scheme;
+		std::optional<http::Version> Version;
+		http::Method Method;
 		std::string Path;
-		Headers Headers;
+		http::Headers Headers;
 
 		// use std::string to store whole body, or use std::deque<std::string>> to store body in parts
 		// empty string in deque means end of body
-		Body Body;
+		http::Body Body;
 		struct
 		{
-			Ip Ip;
+			http::Ip Ip;
 			std::optional<std::uint16_t> Port;
 		} Remote, Local;
 		std::shared_ptr<Atomic<bool>> Cancelled;
 		Atomic<std::map<std::string, std::any>> Extra;
 	};
-	struct Response_t
+	struct Response
 	{
 		std::uint16_t Status;
-		Headers Headers;
-		Body Body;
+		http::Headers Headers;
+		http::Body Body;
 		struct
 		{
-			Ip Ip;
+			http::Ip Ip;
 			std::optional<std::uint16_t> Port;
 		} Remote, Local;
 		std::shared_ptr<Atomic<bool>> Cancelled;
