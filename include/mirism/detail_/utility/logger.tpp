@@ -12,13 +12,13 @@ namespace mirism
 		: CreateTime_{std::chrono::steady_clock::now()}
 	{
 		Guard guard;
-		guard.log<Level_t::Debug>("create {} at {}."_f(nameof::nameof_full_type<T>(), fmt::ptr(this)));
+		guard.log<Level::Debug>("create {} at {}."_f(nameof::nameof_full_type<T>(), fmt::ptr(this)));
 		Objects_.lock()->emplace(this, nameof::nameof_full_type<T>());
 	}
 	template <typename T> Logger::ObjectMonitor<T>::~ObjectMonitor()
 	{
 		Guard guard;
-		guard.log<Level_t::Debug>("destroy {} at {} after {} ms."_f
+		guard.log<Level::Debug>("destroy {} at {} after {} ms."_f
 		(
 			nameof::nameof_full_type<T>(), fmt::ptr(this),
 			std::chrono::duration_cast<std::chrono::milliseconds>
@@ -32,7 +32,7 @@ namespace mirism
 				lock->erase(it);
 				return;
 			}
-		guard.log<Level_t::Error>
+		guard.log<Level::Error>
 			("{} {} not found in Logger::Objects."_f(fmt::ptr(this), nameof::nameof_full_type<T>()));
 	}
 
@@ -55,14 +55,14 @@ namespace mirism
 				ss << param << ", ";
 			ss.seekp(-2, ss.cur);
 			ss << "}.";
-			log<Level_t::Debug>(ss.str());
+			log<Level::Debug>(ss.str());
 		}
 		else
-			log<Level_t::Debug>("begin function.");
+			log<Level::Debug>("begin function.");
 	}
 	inline Logger::Guard::~Guard()
 	{
-		log<Level_t::Debug>("end function after {} ms."_f(std::chrono::duration_cast<std::chrono::milliseconds>
+		log<Level::Debug>("end function after {} ms."_f(std::chrono::duration_cast<std::chrono::milliseconds>
 			(std::chrono::steady_clock::now() - StartTime_).count()));
 		Indent_--;
 		auto&& lock = Threads_.lock();
@@ -74,26 +74,26 @@ namespace mirism
 				lock->erase(thread_id);
 		}
 		else [[unlikely]]
-			log<Level_t::Debug>("{:08x} not found in Logger::Threads."_f
+			log<Level::Debug>("{:08x} not found in Logger::Threads."_f
 				(std::hash<std::thread::id>{}(std::this_thread::get_id()) % std::numeric_limits<std::uint64_t>::max()));
 	}
 	inline void Logger::Guard::operator()() const
 	{
-		log<Level_t::Debug>("reached after {} ms."_f
+		log<Level::Debug>("reached after {} ms."_f
 		(
 			std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - StartTime_).count()
 		));
 	}
 	template <typename T> inline T Logger::Guard::rtn(T&& value) const
 	{
-		log<Level_t::Debug>("return {} after {} ms."_f
+		log<Level::Debug>("return {} after {} ms."_f
 		(
 			std::forward<T>(value), 
 			std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - StartTime_).count()
 		));
 		return std::forward<T>(value);
 	}
-	template <Logger::Level_t L> inline void Logger::Guard::log(const std::string& message) const
+	template <Logger::Level L> inline void Logger::Guard::log(const std::string& message) const
 	{
 		if (auto&& lock = LoggerConfig_.lock(); *lock && lock.value()->Level >= L)
 		{

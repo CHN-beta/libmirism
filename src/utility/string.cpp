@@ -19,7 +19,7 @@ namespace mirism
 			if (regit == std::sregex_iterator{})
 			{
 				unmatched_prefix_end = data->cend();
-				log.log<Logger::Level_t::Debug>("distance: {}"_f(std::distance(unmatched_prefix_begin, unmatched_prefix_end)));
+				log.log<Logger::Level::Debug>("distance: {}"_f(std::distance(unmatched_prefix_begin, unmatched_prefix_end)));
 			}
 			else
 				unmatched_prefix_end = (*regit)[0].first;

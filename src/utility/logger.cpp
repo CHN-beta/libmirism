@@ -5,10 +5,10 @@
 
 namespace mirism
 {
-	Atomic<std::optional<Logger::LoggerConfig_t_>> Logger::LoggerConfig_;
-	void Logger::init(std::experimental::observer_ptr<std::ostream> stream, Level_t level)
+	Atomic<std::optional<Logger::LoggerConfig_>> Logger::LoggerConfig_;
+	void Logger::init(std::experimental::observer_ptr<std::ostream> stream, Level level)
 		{LoggerConfig_.lock()->emplace(stream, nullptr, level);}
-	void Logger::init(std::shared_ptr<std::ostream> stream, Level_t level)
+	void Logger::init(std::shared_ptr<std::ostream> stream, Level level)
 		{LoggerConfig_.lock()->emplace(std::experimental::make_observer(stream.get()), stream, level);}
 
 	Atomic<std::optional<std::pair<std::string, std::string>>> Logger::TelegramConfig_;

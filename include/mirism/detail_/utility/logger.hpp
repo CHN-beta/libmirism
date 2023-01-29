@@ -12,7 +12,7 @@ namespace mirism
 		public: Logger() = delete;
 
 		// Setup output stream and log level in a thread-safe way
-		public: enum class Level_t
+		public: enum class Level
 		{
 			None,
 			Error,
@@ -20,15 +20,15 @@ namespace mirism
 			Info,
 			Debug
 		};
-		protected: struct LoggerConfig_t_
+		protected: struct LoggerConfig_
 		{
 			std::experimental::observer_ptr<std::ostream> Stream;
 			std::shared_ptr<std::ostream> StreamStorage;
-			Level_t Level;
+			Level Level;
 		};
-		protected: static Atomic<std::optional<LoggerConfig_t_>> LoggerConfig_;
-		public: static void init(std::experimental::observer_ptr<std::ostream> stream, Level_t level);
-		public: static void init(std::shared_ptr<std::ostream> stream, Level_t level);
+		protected: static Atomic<std::optional<LoggerConfig_>> LoggerConfig_;
+		public: static void init(std::experimental::observer_ptr<std::ostream> stream, Level level);
+		public: static void init(std::shared_ptr<std::ostream> stream, Level level);
 
 		// Send a telegram message if token and chat id are set, all the functions are thread-safe
 		protected: static Atomic<std::optional<std::pair<std::string, std::string>>> TelegramConfig_;
@@ -77,7 +77,7 @@ namespace mirism
 			// print the following message if LoggerConfig_ is set and the level is higher than the level of the
 			// LoggerConfig_
 			// [ {time} {thread} {indent} {filename}:{line} {function_name} ] {message}
-			public: template <Level_t L> [[gnu::always_inline]] void log(const std::string& message) const;
+			public: template <Level L> [[gnu::always_inline]] void log(const std::string& message) const;
 		};
 		friend class Guard;
 
