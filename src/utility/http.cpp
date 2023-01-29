@@ -3,31 +3,31 @@
 
 namespace mirism::http
 {
-	const Method_t Method_t::Connect{"CONNECT", false};
-	const Method_t Method_t::Delete{"DELETE", true};
-	const Method_t Method_t::Get{"GET", false};
-	const Method_t Method_t::Head{"HEAD", false};
-	const Method_t Method_t::Options{"OPTIONS", false};
-	const Method_t Method_t::Patch{"PATCH", true};
-	const Method_t Method_t::Post{"POST", true};
-	const Method_t Method_t::Put{"PUT", true};
-	const Method_t Method_t::Trace{"TRACE", false};
+	const Method Method::Connect{"CONNECT", false};
+	const Method Method::Delete{"DELETE", true};
+	const Method Method::Get{"GET", false};
+	const Method Method::Head{"HEAD", false};
+	const Method Method::Options{"OPTIONS", false};
+	const Method Method::Patch{"PATCH", true};
+	const Method Method::Post{"POST", true};
+	const Method Method::Put{"PUT", true};
+	const Method Method::Trace{"TRACE", false};
 
 	std::pair<ReadResult, std::optional<std::string>> ReadWholeBody
-		(Body_t body, std::shared_ptr<Atomic<bool>> cancelled, std::chrono::steady_clock::duration timeout)
+		(Body body, std::shared_ptr<Atomic<bool>> cancelled, std::chrono::steady_clock::duration timeout)
 	{
 		Logger::Guard log{body, cancelled, timeout};
 		if (!body || !cancelled)
 		{
-			log.log<Logger::Level_t::Error>("body or cancelled is null");
+			log.log<Logger::Level::Error>("body or cancelled is null");
 			return {ReadResult::OtherError, {}};
 		}
 		if (std::holds_alternative<Atomic<std::string>>(*body))
 		{
-			log.log<Logger::Level_t::Info>("body is std::string");
+			log.log<Logger::Level::Info>("body is std::string");
 			if (*cancelled)
 			{
-				log.log<Logger::Level_t::Info>("cancelled");
+				log.log<Logger::Level::Info>("cancelled");
 				return {ReadResult::Cancelled, {}};
 			}
 			else
@@ -45,12 +45,12 @@ namespace mirism::http
 				auto lock = deque.lock([](const auto& deque){return !deque.empty();}, timeout);
 				if (*cancelled)
 				{
-					log.log<Logger::Level_t::Info>("cancelled");
+					log.log<Logger::Level::Info>("cancelled");
 					return {ReadResult::Cancelled, {}};
 				}
 				else if (!lock)
 				{
-					log.log<Logger::Level_t::Info>("timeout");
+					log.log<Logger::Level::Info>("timeout");
 					return {ReadResult::Timeout, {}};
 				}
 				else
@@ -60,7 +60,7 @@ namespace mirism::http
 						(*lock)->pop_front();
 						if (!part)
 						{
-							log.log<Logger::Level_t::Info>("end of body");
+							log.log<Logger::Level::Info>("end of body");
 							return {ReadResult::Success, result};
 						}
 						else
@@ -70,25 +70,25 @@ namespace mirism::http
 		}
 		else [[unlikely]]
 		{
-			log.log<Logger::Level_t::Error>("variant error");
+			log.log<Logger::Level::Error>("variant error");
 			return {ReadResult::OtherError, {}};
 		}
 	}
 	cppcoro::generator<std::pair<ReadResult, std::optional<std::string>>> ReadNextBodyPart
-		(Body_t body, std::shared_ptr<Atomic<bool>> cancelled, std::chrono::steady_clock::duration timeout)
+		(Body body, std::shared_ptr<Atomic<bool>> cancelled, std::chrono::steady_clock::duration timeout)
 	{
 		Logger::Guard log{body, cancelled, timeout};
 		if (!body || !cancelled)
 		{
-			log.log<Logger::Level_t::Error>("body or cancelled is null");
+			log.log<Logger::Level::Error>("body or cancelled is null");
 			co_yield {ReadResult::OtherError, {}};
 		}
 		else if (std::holds_alternative<Atomic<std::string>>(*body))
 		{
-			log.log<Logger::Level_t::Info>("body is std::string");
+			log.log<Logger::Level::Info>("body is std::string");
 			if (*cancelled)
 			{
-				log.log<Logger::Level_t::Info>("cancelled");
+				log.log<Logger::Level::Info>("cancelled");
 				co_yield {ReadResult::Cancelled, {}};
 			}
 			else
@@ -105,14 +105,14 @@ namespace mirism::http
 				auto lock = deque.lock([](const auto& deque){return !deque.empty();}, timeout);
 				if (*cancelled)
 				{
-					log.log<Logger::Level_t::Info>("cancelled");
+					log.log<Logger::Level::Info>("cancelled");
 					lock.reset();
 					co_yield {ReadResult::Cancelled, {}};
 					break;
 				}
 				else if (!lock)
 				{
-					log.log<Logger::Level_t::Info>("timeout");
+					log.log<Logger::Level::Info>("timeout");
 					co_yield {ReadResult::Timeout, {}};
 				}
 				else
@@ -122,7 +122,7 @@ namespace mirism::http
 					lock.reset();
 					if (!part)
 					{
-						log.log<Logger::Level_t::Info>("end of body");
+						log.log<Logger::Level::Info>("end of body");
 						co_yield {ReadResult::EndOfFile, {}};
 						break;
 					}
@@ -133,7 +133,7 @@ namespace mirism::http
 		}
 		else [[unlikely]]
 		{
-			log.log<Logger::Level_t::Error>("variant error");
+			log.log<Logger::Level::Error>("variant error");
 			co_yield {ReadResult::OtherError, {}};
 		}
 	}
