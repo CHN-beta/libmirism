@@ -13,7 +13,8 @@ namespace mirism
 	{
 		Guard guard;
 		guard.log<Level::Debug>("create {} at {}."_f(nameof::nameof_full_type<T>(), fmt::ptr(this)));
-		Objects_.lock()->emplace(this, nameof::nameof_full_type<T>());
+		auto&& lock = Objects_.lock();
+		lock->emplace(this, nameof::nameof_full_type<T>());
 	}
 	template <typename T> Logger::ObjectMonitor<T>::~ObjectMonitor()
 	{

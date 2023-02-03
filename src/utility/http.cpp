@@ -42,7 +42,7 @@ namespace mirism::http
 				// 等待 一段时间，直到 deque 中有项目，或超时。
 				// 检查 cancelled。如果为 true，按照取消处理。
 				// 否则，按照超时或读取成功处理。
-				auto lock = deque.lock([](const auto& deque){return !deque.empty();}, timeout);
+				auto lock = deque.lock<true>([](const auto& deque){return !deque.empty();}, timeout);
 				if (*cancelled)
 				{
 					log.log<Logger::Level::Info>("cancelled");
@@ -102,7 +102,7 @@ namespace mirism::http
 			auto deque = std::get<Atomic<std::deque<std::optional<std::string>>>>(*body);
 			while (true)
 			{
-				auto lock = deque.lock([](const auto& deque){return !deque.empty();}, timeout);
+				auto lock = deque.lock<true>([](const auto& deque){return !deque.empty();}, timeout);
 				if (*cancelled)
 				{
 					log.log<Logger::Level::Info>("cancelled");
