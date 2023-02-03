@@ -6,11 +6,11 @@
 
 namespace mirism::handler
 {
-	class Base_t
+	class Base
 	{
-		public: virtual ~Base_t() = default;
+		public: virtual ~Base() = default;
 
-		public: enum class PatchTiming_t
+		public: enum class PatchTiming
 		{
 			BeforeAllPatch,
 				BeforeRequestHeaderPatch, AtRequestHeaderPatch, AfterRequestHeaderPatch,
@@ -28,60 +28,60 @@ namespace mirism::handler
 				AfterResponseBodyPatch,
 			AfterAllPatch
 		};
-		public: struct Patch_t;
-		public: using PatchList_t
-			= std::vector<std::pair<PatchTiming_t, std::vector<std::pair<std::shared_ptr<Patch_t>, bool>>>>;
-		public: using PatchListSpan_t
-			= std::span<std::pair<PatchTiming_t, std::vector<std::pair<std::shared_ptr<Patch_t>, bool>>>>;
-		public: struct Patch_t
+		public: struct Patch;
+		public: using PatchList
+			= std::vector<std::pair<PatchTiming, std::vector<std::pair<std::shared_ptr<Patch>, bool>>>>;
+		public: using PatchListSpan
+			= std::span<std::pair<PatchTiming, std::vector<std::pair<std::shared_ptr<Patch>, bool>>>>;
+		public: struct Patch
 		{
 			std::string Name;
-			PatchTiming_t Timing;
+			PatchTiming Timing;
 			std::function<bool
 			(
-				std::experimental::observer_ptr<http::Request_t>, std::experimental::observer_ptr<http::Response_t>,
-				const PatchListSpan_t&
+				std::experimental::observer_ptr<http::Request>, std::experimental::observer_ptr<http::Response>,
+				const PatchListSpan&
 			)> Patch;
 		};
 
-		public: struct Url_t
+		public: struct Url
 		{
-			public: Url_t(std::string url, std::string request_domain, std::string request_path);
-			public: enum class Type_t {Full, Half, Absolute, Relative} Type;
+			public: Url(std::string url, std::string request_domain, std::string request_path);
+			public: enum class Type {Full, Half, Absolute, Relative} Type;
 			public: std::optional<std::string> Scheme, HostAndPort;
 			public: std::string Path, RequestDomain, RequestPath;
 		};
 
-		public: enum class UrlPatchTiming_t {BeforePatch, AtPatch, AfterPatch};
-		public: struct UrlPatch_t;
-		public: using UrlPatchList_t
-			= std::vector<std::pair<UrlPatchTiming_t, std::vector<std::pair<std::shared_ptr<UrlPatch_t>, bool>>>>;
-		public: using UrlPatchListSpan_t
-			= std::span<std::pair<UrlPatchTiming_t, std::vector<std::pair<std::shared_ptr<UrlPatch_t>, bool>>>>;
-		public: struct UrlPatch_t
+		public: enum class UrlPatchTiming {BeforePatch, AtPatch, AfterPatch};
+		public: struct UrlPatch;
+		public: using UrlPatchList
+			= std::vector<std::pair<UrlPatchTiming, std::vector<std::pair<std::shared_ptr<UrlPatch>, bool>>>>;
+		public: using UrlPatchListSpan
+			= std::span<std::pair<UrlPatchTiming, std::vector<std::pair<std::shared_ptr<UrlPatch>, bool>>>>;
+		public: struct UrlPatch
 		{
 			std::string Name;
-			UrlPatchTiming_t Timing;
-			std::function<std::optional<Url_t>(Url_t, const UrlPatchListSpan_t&)> Patch, Depatch;
+			UrlPatchTiming Timing;
+			std::function<std::optional<Url>(Url, const UrlPatchListSpan&)> Patch, Depatch;
 		};
 
-		protected: Base_t
+		protected: Base
 		(
-			std::shared_ptr<client::Base_t> client,
-			std::vector<PatchListSpan_t> patch_list, std::vector<UrlPatchListSpan_t> url_patch_list
+			std::shared_ptr<client::Base> client,
+			std::vector<PatchListSpan> patch_list, std::vector<UrlPatchListSpan> url_patch_list
 		);
 
 		// handle a request, and return a response
 		// nullptr might be used for testing or once any fatal error occurs
-		public: virtual std::shared_ptr<http::Response_t> operator()(std::shared_ptr<http::Request_t> request) = 0;
+		public: virtual std::shared_ptr<http::Response> operator()(std::shared_ptr<http::Request> request) = 0;
 
 		// get patch list
 		// outside objects should not hold the shared pointer when the handler is going to be destroyed
-		public: virtual PatchListSpan_t get_patch_list() const = 0;
-		public: virtual UrlPatchListSpan_t get_url_patch_list() const = 0;
+		public: virtual PatchListSpan get_patch_list() const = 0;
+		public: virtual UrlPatchListSpan get_url_patch_list() const = 0;
 
-		protected: PatchList_t PatchList_;
-		protected: UrlPatchList_t UrlPatchList_;
+		protected: PatchList PatchList_;
+		protected: UrlPatchList UrlPatchList_;
 		protected: std::shared_ptr<client::Base> Client_;
 	};
 }

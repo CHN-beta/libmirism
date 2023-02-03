@@ -7,7 +7,7 @@
 
 namespace mirism::string
 {
-	enum class CompressMethod {Gzip, Deflated, Brotli};
+	enum class CompressMethod {Gzip, Deflate, Brotli};
 	template <CompressMethod Method> std::optional<std::string> compress(const std::string& data);
 	template <CompressMethod Method> std::optional<std::string> decompress(const std::string& data);
 }

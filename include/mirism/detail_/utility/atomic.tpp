@@ -3,52 +3,137 @@
 
 namespace mirism
 {
-	template <DecayedType ValueType> Atomic<ValueType>::Atomic(const ValueType& value) : Value_{value} {}
-	template <DecayedType ValueType> Atomic<ValueType>::Atomic(ValueType&& value) : Value_{std::move(value)} {}
-	template <DecayedType ValueType> Atomic<ValueType>::Atomic(const Atomic& other) : Value_{other.get()} {}
-	template <DecayedType ValueType> Atomic<ValueType>::Atomic(Atomic&& other) : Value_{std::move(other).get()} {}
-
-	template <DecayedType ValueType> Atomic<ValueType>& Atomic<ValueType>::operator=(const ValueType& other)
-	{
-		std::scoped_lock lock{Mutex_};
-		Value_ = other;
-		ConditionVariable_.notify_all();
-		return *this;
-	}
-	template <DecayedType ValueType> Atomic<ValueType>& Atomic<ValueType>::operator=(ValueType&& other)
-	{
-		std::scoped_lock lock{Mutex_};
-		Value_ = std::move(other);
-		ConditionVariable_.notify_all();
-		return *this;
-	}
-	template <DecayedType ValueType> Atomic<ValueType>& Atomic<ValueType>::operator=(const Atomic& other)
+	template <DecayedType ValueType> Atomic<ValueType>& Atomic<ValueType>::operator=(auto&& other)
 	{
 		std::scoped_lock lock{Mutex_, other.Mutex_};
-		Value_ = other.Value_;
-		ConditionVariable_.notify_all();
-		return *this;
-	}
-	template <DecayedType ValueType> Atomic<ValueType>& Atomic<ValueType>::operator=(Atomic&& other)
-	{
-		std::scoped_lock lock{Mutex_, other.Mutex_};
-		Value_ = std::move(other.Value_);
+		Value_ = std::forward<decltype(other)>(other);
 		ConditionVariable_.notify_all();
 		return *this;
 	}
 
-	template <DecayedType ValueType> ValueType Atomic<ValueType>::get() const&
+	template <DecayedType ValueType> template <bool ReturnFunctionResult, std::invocable<const ValueType&> Function>
+		std::conditional_t
+			<ReturnFunctionResult, std::invoke_result_t<Function, const ValueType&>, const Atomic<ValueType>&>
+		Atomic<ValueType>::apply(Function&& function) const&
+		{return apply_<ReturnFunctionResult>(*this, std::forward<Function>(function), nullptr, nullptr);}
+	template <DecayedType ValueType> template <bool ReturnFunctionResult, std::invocable<ValueType&> Function>
+		std::conditional_t
+			<ReturnFunctionResult, std::invoke_result_t<Function, ValueType&>, Atomic<ValueType>&>
+		Atomic<ValueType>::apply(Function&& function) &
+		{return apply_<ReturnFunctionResult>(*this, std::forward<Function>(function), nullptr, nullptr);}
+	template <DecayedType ValueType> template <bool ReturnFunctionResult, std::invocable<ValueType&&> Function>
+		std::conditional_t
+			<ReturnFunctionResult, std::invoke_result_t<Function, ValueType&&>, Atomic<ValueType>&&>
+		Atomic<ValueType>::apply(Function&& function) &&
+		{return apply_<ReturnFunctionResult>(std::move(*this), std::forward<Function>(function), nullptr, nullptr);}
+	template <DecayedType ValueType> template
+		<
+			bool ReturnFunctionResult,
+			std::invocable<const ValueType&> Function,
+			InvocableWithResult<bool, const ValueType&> ConditionFunction
+		> std::conditional_t
+			<ReturnFunctionResult, std::invoke_result_t<Function, const ValueType&>, const Atomic<ValueType>&>
+		Atomic<ValueType>::apply(Function&& function, ConditionFunction&& condition_function) const&
 	{
-		std::scoped_lock lock{Mutex_};
-		return Value_;
+		return apply_<ReturnFunctionResult>
+			(*this, std::forward<Function>(function), std::forward<ConditionFunction>(condition_function), nullptr);
 	}
-	template <DecayedType ValueType> ValueType Atomic<ValueType>::get() &&
+	template <DecayedType ValueType> template
+		<
+			bool ReturnFunctionResult,
+			std::invocable<ValueType&> Function,
+			InvocableWithResult<bool, const ValueType&> ConditionFunction
+		> std::conditional_t<ReturnFunctionResult, std::invoke_result_t<Function, ValueType&>, Atomic<ValueType>&>
+		Atomic<ValueType>::apply(Function&& function, ConditionFunction&& condition_function) &
 	{
-		std::scoped_lock lock{Mutex_};
-		return std::move(Value_);
+		return apply_<ReturnFunctionResult>
+			(*this, std::forward<Function>(function), std::forward<ConditionFunction>(condition_function), nullptr);
 	}
-	template <DecayedType ValueType> Atomic<ValueType>::operator ValueType() const& {return get();}
-	template <DecayedType ValueType> Atomic<ValueType>::operator ValueType() && {return std::move(*this).get();}
+	template <DecayedType ValueType> template
+		<
+			bool ReturnFunctionResult,
+			std::invocable<ValueType&> Function,
+			InvocableWithResult<bool, ValueType&&> ConditionFunction
+		> std::conditional_t<ReturnFunctionResult, std::invoke_result_t<Function, ValueType&&>, Atomic<ValueType>&&>
+		Atomic<ValueType>::apply(Function&& function, ConditionFunction&& condition_function) &&
+	{
+		return apply_<ReturnFunctionResult>
+		(
+			std::move(*this),
+			std::forward<Function>(function), std::forward<ConditionFunction>(condition_function),
+			nullptr
+		);
+	}
+	template <DecayedType ValueType> template
+		<
+			bool ReturnFunctionResult,
+			std::invocable<const ValueType&> Function,
+			InvocableWithResult<bool, const ValueType&> ConditionFunction,
+			SpecializationOf<std::chrono::duration> Duration
+		> std::conditional_t
+			<ReturnFunctionResult, std::invoke_result_t<Function, const ValueType&>, const Atomic<ValueType>&>
+		Atomic<ValueType>::apply(Function&& function, ConditionFunction&& condition_function, Duration timeout) const&
+	{
+		return apply_<ReturnFunctionResult>
+			(*this, std::forward<Function>(function), std::forward<ConditionFunction>(condition_function), timeout);
+	}
+	template <DecayedType ValueType> template
+		<
+			bool ReturnFunctionResult,
+			std::invocable<ValueType&> Function,
+			InvocableWithResult<bool, const ValueType&> ConditionFunction,
+			SpecializationOf<std::chrono::duration> Duration
+		> std::conditional_t<ReturnFunctionResult, std::invoke_result_t<Function, ValueType&>, Atomic<ValueType>&>
+		Atomic<ValueType>::apply(Function&& function, ConditionFunction&& condition_function, Duration timeout) &
+	{
+		return apply_<ReturnFunctionResult>
+			(*this, std::forward<Function>(function), std::forward<ConditionFunction>(condition_function), timeout);
+	}
+	template <DecayedType ValueType> template
+		<
+			bool ReturnFunctionResult,
+			std::invocable<ValueType&&> Function,
+			InvocableWithResult<bool, const ValueType&> ConditionFunction,
+			SpecializationOf<std::chrono::duration> Duration
+		> std::conditional_t<ReturnFunctionResult, std::invoke_result_t<Function, ValueType&&>, Atomic<ValueType>&&>
+		Atomic<ValueType>::apply(Function&& function, ConditionFunction&& condition_function, Duration timeout) &&
+	{
+		return apply_<ReturnFunctionResult>
+		(
+			std::move(*this),
+			std::forward<Function>(function), std::forward<ConditionFunction>(condition_function),
+			timeout
+		);
+	}
+	template <DecayedType ValueType> template <bool ReturnFunctionResult>
+		auto Atomic<ValueType>::apply_(auto&& atomic, auto&& function, auto&& condition_function, auto timeout)
+		-> std::conditional_t
+		<
+			ReturnFunctionResult,
+			std::invoke_result_t<decltype(function), MoveQualifiersType<decltype(atomic), ValueType>>,
+			decltype(atomic)&&
+		>
+	{
+		std::unique_lock lock{Mutex_};
+		if (ConditionVariable_.wait_for(lock, timeout, [this, &condition_function]{return condition_function(Value_);}))
+		{
+			if constexpr (std::same_as<decltype(function(Value_)), void>)
+			{
+				function(Value_);
+				return true;
+			}
+			else
+				return function(Value_);
+		}
+		else
+		{
+			if constexpr (std::same_as<decltype(function(Value_)), void>)
+				return false;
+			else
+				return std::nullopt;
+		}
+	}
+
 
 	template <DecayedType ValueType> template <typename Function>
 		auto Atomic<ValueType>::apply(Function&& function) const

@@ -37,4 +37,7 @@ namespace mirism
 		= requires() {typename std::type_identity_t<int[(Function()(Args...), 1)]>;};
 
 	template <typename T> concept Enumerable = std::is_enum_v<T>;
+
+	template <typename Function, typename Result, typename... Args> concept InvocableWithResult
+		= std::is_invocable_r_v<Result, Function, Args...>;
 }

@@ -14,7 +14,7 @@ namespace mirism::string
 		Logger::Guard log;
 		try
 		{
-			if constexpr (Method == CompressMethod::Gzip || Method == CompressMethod::Deflated)
+			if constexpr (Method == CompressMethod::Gzip || Method == CompressMethod::Deflate)
 			{
 				std::stringstream compressed;
 				std::stringstream origin{std::move(data)};
@@ -25,7 +25,7 @@ namespace mirism::string
 						boost::iostreams::gzip_compressor
 							(boost::iostreams::gzip_params(boost::iostreams::gzip::best_compression))
 					);
-				else if constexpr (Method == CompressMethod::Deflated)
+				else if constexpr (Method == CompressMethod::Deflate)
 					out.push(boost::iostreams::zlib_compressor(boost::iostreams::zlib::best_compression));
 				else
 					std::unreachable();
@@ -76,21 +76,21 @@ namespace mirism::string
 		}
 	}
 	template std::optional<std::string> compress<CompressMethod::Gzip>(const std::string& data);
-	template std::optional<std::string> compress<CompressMethod::Deflated>(const std::string& data);
+	template std::optional<std::string> compress<CompressMethod::Deflate>(const std::string& data);
 	template std::optional<std::string> compress<CompressMethod::Brotli>(const std::string& data);
 	template <CompressMethod Method> std::optional<std::string> decompress(const std::string& data)
 	{
 		Logger::Guard log;
 		try
 		{
-			if constexpr (Method == CompressMethod::Gzip || Method == CompressMethod::Deflated)
+			if constexpr (Method == CompressMethod::Gzip || Method == CompressMethod::Deflate)
 			{
 				std::stringstream decompressed;
 				std::stringstream origin{std::move(data)};
 				boost::iostreams::filtering_streambuf<boost::iostreams::input> out;
 				if constexpr (Method == CompressMethod::Gzip)
 					out.push(boost::iostreams::gzip_decompressor{});
-				else if constexpr (Method == CompressMethod::Deflated)
+				else if constexpr (Method == CompressMethod::Deflate)
 					out.push(boost::iostreams::zlib_decompressor{});
 				else
 					std::unreachable();
@@ -143,6 +143,6 @@ namespace mirism::string
 		}
 	}
 	template std::optional<std::string> decompress<CompressMethod::Gzip>(const std::string& data);
-	template std::optional<std::string> decompress<CompressMethod::Deflated>(const std::string& data);
+	template std::optional<std::string> decompress<CompressMethod::Deflate>(const std::string& data);
 	template std::optional<std::string> decompress<CompressMethod::Brotli>(const std::string& data);
 }
