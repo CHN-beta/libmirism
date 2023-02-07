@@ -41,16 +41,10 @@ namespace mirism
 		// Apply a function to stored value.
 		// Wait for some time (if provided) until condition funciton returns true (if provided)
 		// before applying the function.
-		protected: template
-			<
-				bool ReturnFunctionResult, bool Nothrow = false,
-				typename ConditionFunction = std::nullptr_t, typename Duration = std::nullptr_t
-			>
-			static auto apply_
-			(
-				auto&& atomic, auto&& function,
-				ConditionFunction&& condition_function = nullptr, Duration timeout = nullptr
-			)
+		protected: template <bool ReturnFunctionResult, bool Nothrow = false,
+				typename ConditionFunction = std::nullptr_t, typename Duration = std::nullptr_t>
+			static auto apply_(auto&& atomic, auto&& function,
+				ConditionFunction&& condition_function = nullptr, Duration timeout = nullptr)
 			-> std::conditional_t
 			<
 				Nothrow,

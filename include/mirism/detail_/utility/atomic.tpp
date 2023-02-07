@@ -47,27 +47,20 @@ namespace mirism
 		// try to meet the condition
 		if constexpr (!std::is_null_pointer_v<ConditionFunction>)
 		{
-			if constexpr (std::is_null_pointer_v<Duration>)
-				atomic.ConditionVariable_.wait(lock, [&]
-				{
-					return std::forward<ConditionFunction>(condition_function)(std::as_const(atomic.Value_));
-				});
+			if constexpr (std::is_null_pointer_v<Duration>) atomic.ConditionVariable_.wait(lock, [&]
+				{return std::forward<ConditionFunction>(condition_function)(std::as_const(atomic.Value_));});
 			else if (!atomic.ConditionVariable_.wait_for(lock, timeout, [&]
-			{
-				return std::forward<ConditionFunction>(condition_function)(std::as_const(atomic.Value_));
-			}))
+				{return std::forward<ConditionFunction>(condition_function)(std::as_const(atomic.Value_));}))
 			{
 				if constexpr (Nothrow)
 				{
-					if constexpr (ReturnFunctionResult
-						&& !std::is_void_v<std::invoke_result_t<decltype(function), ValueType>>)
+					if constexpr
+						(ReturnFunctionResult && !std::is_void_v<std::invoke_result_t<decltype(function), ValueType>>)
 						return std::nullopt;
-					else
-						return false;
+					else return false;
 				}
-				else
-					// TODO: use logger to throw
-					throw TimeoutException{};
+				// TODO: use logger to throw
+				else throw TimeoutException{};
 			}
 		}
 
@@ -76,20 +69,17 @@ namespace mirism
 		{
 			auto&& result = std::forward<decltype(function)>(function)
 				(static_cast<MoveQualifiersType<decltype(atomic), ValueType>&&>(atomic.Value_));
-			if constexpr (!std::is_const_v<decltype(atomic)>)
-				atomic.ConditionVariable_.notify_all();
+			if constexpr (!std::is_const_v<decltype(atomic)>) atomic.ConditionVariable_.notify_all();
 			return std::forward<decltype(result)>(result);
 		}
 		else
 		{
 			std::forward<decltype(function)>(function)
 				(static_cast<MoveQualifiersType<decltype(atomic), ValueType>&&>(atomic.Value_));
-			if constexpr (!std::is_const_v<decltype(atomic)>)
-				atomic.ConditionVariable_.notify_all();
+			if constexpr (!std::is_const_v<decltype(atomic)>) atomic.ConditionVariable_.notify_all();
 			if constexpr (ReturnFunctionResult && std::is_void_v<std::invoke_result_t<decltype(function), ValueType>>)
 				return;
-			else
-				return std::forward<decltype(atomic)>(atomic);
+			else return std::forward<decltype(atomic)>(atomic);
 		}
 	}
 
@@ -112,18 +102,14 @@ namespace mirism
 			if (!atomic.ConditionVariable_.wait_for(lock, timeout, [&]
 				{return std::forward<decltype(condition_function)>(condition_function)(std::as_const(atomic.Value_));}))
 			{
-				if constexpr (Nothrow)
-					return false;
-				else
-					// TODO: use logger to throw
-					throw TimeoutException{};
+				if constexpr (Nothrow) return false;
+				// TODO: use logger to throw
+				else throw TimeoutException{};
 			}
 			else
 			{
-				if constexpr (Nothrow)
-					return true;
-				else
-					return std::forward<decltype(atomic)>(atomic);
+				if constexpr (Nothrow) return true;
+				else return std::forward<decltype(atomic)>(atomic);
 			}
 		}
 	}
@@ -157,11 +143,9 @@ namespace mirism
 			if (!atomic.ConditionVariable_.wait_for(lock, timeout, [&]
 				{return std::forward<ConditionFunction>(condition_function)(std::as_const(atomic.Value_));}))
 			{
-				if constexpr (Nothrow)
-					return std::nullopt;
-				else
-					// TODO: use logger to throw
-					throw TimeoutException{};
+				if constexpr (Nothrow) return std::nullopt;
+				// TODO: use logger to throw
+				else throw TimeoutException{};
 			}
 			else
 				return {{std::move(lock), std::experimental::make_observer(&atomic), {}}};
