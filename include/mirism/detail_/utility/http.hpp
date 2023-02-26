@@ -1,10 +1,11 @@
 # pragma once
 # include <map>
 # include <any>
+# include <variant>
 # include <fmt/ostream.h>
 # include <cppcoro/generator.hpp>
-# include <mirism/detail_/utility/atomic.tpp>
-# include <mirism/detail_/utility/common.tpp>
+# include <mirism/detail_/utility/atomic.hpp>
+# include <mirism/detail_/utility/common.hpp>
 
 namespace mirism::http
 {

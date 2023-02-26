@@ -1,0 +1,7 @@
+add_executable(test_utility_common common.cpp)
+target_link_libraries(test_utility_common mirism::utility)
+add_test(test_utility_common test_utility_common)
+
+set_property(TARGET test_utility_common PROPERTY CXX_STANDARD 23)
+set_property(TARGET test_utility_common PROPERTY CXX_STANDARD_REQUIRED ON)
+set_property(TARGET test_utility_common PROPERTY CXX_EXTENSIONS OFF)

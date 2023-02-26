@@ -1,6 +1,8 @@
 # pragma once
 # include <map>
-# include <mirism/detail_/utility/atomic.tpp>
+# include <boost/stacktrace.hpp>
+# include <mirism/detail_/utility/atomic.hpp>
+# define MIRISM_LOGGER_INCLUDED
 
 namespace mirism
 {
@@ -26,12 +28,12 @@ namespace mirism
 			std::shared_ptr<std::ostream> StreamStorage;
 			Logger::Level Level;
 		};
-		protected: static Atomic<std::optional<LoggerConfig_>> LoggerConfig_;
+		protected: static Atomic<std::optional<LoggerConfig_>, false> LoggerConfig_;
 		public: static void init(std::experimental::observer_ptr<std::ostream> stream, Level level);
 		public: static void init(std::shared_ptr<std::ostream> stream, Level level);
 
 		// Send a telegram message if token and chat id are set, all the functions are thread-safe
-		protected: static Atomic<std::optional<std::pair<std::string, std::string>>> TelegramConfig_;
+		protected: static Atomic<std::optional<std::pair<std::string, std::string>>, false> TelegramConfig_;
 		public: static void telegram_init(const std::string& token, const std::string& chat_id);
 		public: static void telegram_notify(const std::string& message);
 		public: static void telegram_notify_async(const std::string& message);
@@ -51,7 +53,16 @@ namespace mirism
 		template <typename T> friend class ObjectMonitor;
 
 		// List of objects that is being monitored by ObjectMonitor, {address, type}
-		protected: static Atomic<std::multimap<const void*, std::string_view>> Objects_;
+		protected: static Atomic<std::multimap<const void*, std::string_view>, false> Objects_;
+
+		public: template <typename FinalException> class Exception : public std::exception
+		{
+			protected: const std::string Message_;
+			protected: const boost::stacktrace::stacktrace Stacktrace_;
+
+			public: explicit Exception(const std::string& message);
+			public: const char* what() const noexcept final {return Message_.c_str();}
+		};
 
 		// Monitor the start and end of a function, as well as corresponding thread.
 		// This object should be construct at the beginning of the function, and should never be passed to another
@@ -78,10 +89,16 @@ namespace mirism
 			// LoggerConfig_
 			// [ {time} {thread} {indent} {filename}:{line} {function_name} ] {message}
 			public: template <Level L> [[gnu::always_inline]] void log(const std::string& message) const;
+
+			public: template <typename FinalException> [[gnu::always_inline]] void print_exception
+			(
+				const std::string& type, const std::string& message, const boost::stacktrace::stacktrace& stacktrace,
+				CalledBy<Exception<FinalException>>
+			) const;
 		};
 		friend class Guard;
 
 		// list of threads which is being monitored by Guard and number of Guard created in this thread so far
-		protected: static Atomic<std::map<std::size_t, std::size_t>> Threads_;
+		protected: static Atomic<std::map<std::size_t, std::size_t>, false> Threads_;
 	};
 }

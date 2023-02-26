@@ -4,8 +4,8 @@
 # include <boost/iostreams/filter/zlib.hpp>
 # include <brotli/encode.h>
 # include <brotli/decode.h>
-# include <mirism/detail_/utility/compression.hpp>
-# include <mirism/detail_/utility/logger.tpp>
+# include <mirism/utility/compression.hpp>
+# include <mirism/utility/logger.hpp>
 
 namespace mirism::string
 {

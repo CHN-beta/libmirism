@@ -1,10 +1,9 @@
 # pragma once
 # define BOOST_STACKTRACE_USE_BACKTRACE
-# include <boost/stacktrace.hpp>
 # include <fmt/chrono.h>
 # include <mirism/detail_/utility/logger.hpp>
-# include <mirism/detail_/utility/common.tpp>
-# include <mirism/detail_/utility/format.tpp>
+# include <mirism/detail_/utility/common.hpp>
+# include <mirism/detail_/utility/format.hpp>
 
 namespace mirism
 {
@@ -35,6 +34,12 @@ namespace mirism
 			}
 		guard.log<Level::Error>
 			("{} {} not found in Logger::Objects."_f(fmt::ptr(this), nameof::nameof_full_type<T>()));
+	}
+
+	template <typename FinalException> Logger::Exception<FinalException>::Exception(const std::string& message)
+	{
+		Logger::Guard log{message};
+		log.print_exception(nameof::nameof_full_type<FinalException>(), message, Stacktrace_);
 	}
 
 	template <typename... Param> inline Logger::Guard::Guard(Param&&... param)
@@ -119,6 +124,32 @@ namespace mirism
 				stack[0].name(),
 				message
 			) << std::flush;
+		}
+	}
+	inline void Logger::Guard::print_exception
+	(
+		const std::string& type, const std::string& message, const boost::stacktrace::stacktrace& stacktrace,
+		CalledBy<Exception<FinalException>>
+	) const
+	{
+		log<Level::Error>("{}: {}"_f(type, message));
+		if (auto&& lock = LoggerConfig_.lock(); *lock && lock.value()->Level >= Logger::Level::Error)
+		{
+			static_assert(std::same_as<std::size_t, std::uint64_t>);
+			for (auto frame : stacktrace)
+				*lock.value()->Stream << "\tfrom {}:{} {}\n"_f
+				(
+					frame.source_file().empty() ? "??"s :
+					(
+						frame.source_file().contains("mirism/")
+						? frame.source_file().substr
+							(frame.source_file().rfind("mirism/") + "mirism/"s.length())
+						: frame.source_file()
+					),
+					frame.source_line() == 0 ? "??"s : "{}"_f(frame.source_line()),
+					frame.name()
+				);
+			*lock.value()->Stream << std::flush;
 		}
 	}
 }

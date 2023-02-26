@@ -1,6 +1,6 @@
 # include <future>
 # include <utility>
-# include <mirism/detail_/utility/common.tpp>
+# include <mirism/utility/common.hpp>
 
 namespace mirism
 {

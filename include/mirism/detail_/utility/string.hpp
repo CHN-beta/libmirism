@@ -17,8 +17,8 @@
 # include <string_view>
 # include <iostream>
 # include <cppcoro/generator.hpp>
-# include <mirism/detail_/utility/concepts.tpp>
-# include <mirism/detail_/utility/smartref.tpp>
+# include <mirism/detail_/utility/concepts.hpp>
+# include <mirism/detail_/utility/smartref.hpp>
 
 namespace mirism
 {

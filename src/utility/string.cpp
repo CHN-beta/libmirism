@@ -1,6 +1,6 @@
 # include <fmt/chrono.h>
-# include <mirism/detail_/utility/logger.tpp>
-# include <mirism/detail_/utility/string.tpp>
+# include <mirism/utility/string.hpp>
+# include <mirism/utility/logger.hpp>
 
 namespace mirism
 {
