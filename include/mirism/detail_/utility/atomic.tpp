@@ -5,6 +5,11 @@
 
 namespace mirism
 {
+	template <DecayedType ValueType> detail_::AtomicBase<ValueType, false>::AtomicBase(const ValueType& value)
+		: Value_{value} {}
+	template <DecayedType ValueType> detail_::AtomicBase<ValueType, false>::AtomicBase(ValueType&& value)
+		: Value_{std::move(value)} {}
+
 	template <DecayedType ValueType>
 		detail_::AtomicBase<ValueType, false>::TimeoutException::TimeoutException(std::string message)
 		: Message_{"TimeoutException"} {}
@@ -119,56 +124,56 @@ namespace mirism
 	}
 
 	template <DecayedType ValueType, bool UseLogger> Atomic<ValueType, UseLogger>::Atomic(const ValueType& value)
-		: Value_{value} {}
+		: detail_::AtomicBase<ValueType, UseLogger>{value} {}
 	template <DecayedType ValueType, bool UseLogger> Atomic<ValueType, UseLogger>::Atomic(ValueType&& value)
-		: Value_{std::move(value)} {}
+		: detail_::AtomicBase<ValueType, UseLogger>{std::move(value)} {}
 	template <DecayedType ValueType, bool UseLogger> template <bool OtherUseLogger>
-		Atomic<ValueType, UseLogger>::Atomic(const Atomic<ValueType, OtherUseLogger>& other);
-		: Value_{other} {}
+		Atomic<ValueType, UseLogger>::Atomic(const Atomic<ValueType, OtherUseLogger>& other)
+		: AtomicBase<ValueType, UseLogger>{other} {}
 	template <DecayedType ValueType, bool UseLogger> template <bool OtherUseLogger>
-		Atomic<ValueType, UseLogger>::Atomic(Atomic<ValueType, OtherUseLogger>&& other);
-		: Value_{std::move(other)} {}
+		Atomic<ValueType, UseLogger>::Atomic(Atomic<ValueType, OtherUseLogger>&& other)
+		: AtomicBase<ValueType, UseLogger>{std::move(other)} {}
 	template <DecayedType ValueType, bool UseLogger>
 		Atomic<ValueType, UseLogger>& Atomic<ValueType, UseLogger>::operator=(const ValueType& value)
 	{
-		std::scoped_lock lock{Mutex_};
-		Value_ = value;
-		ConditionVariable_.notify_all();
+		std::scoped_lock lock{DeepBase_::Mutex_};
+		DeepBase_::Value_ = value;
+		DeepBase_::ConditionVariable_.notify_all();
 		return *this;
 	}
 	template <DecayedType ValueType, bool UseLogger>
 		Atomic<ValueType, UseLogger>& Atomic<ValueType, UseLogger>::operator=(ValueType&& value)
 	{
-		std::scoped_lock lock{Mutex_};
-		Value_ = std::move(value);
-		ConditionVariable_.notify_all();
+		std::scoped_lock lock{DeepBase_::Mutex_};
+		DeepBase_::Value_ = std::move(value);
+		DeepBase_::ConditionVariable_.notify_all();
 		return *this;
 	}
 	template <DecayedType ValueType, bool UseLogger> template <bool OtherUseLogger>
 		Atomic<ValueType, UseLogger>& operator=(const Atomic<ValueType, OtherUseLogger>& other);
 	{
-		std::scoped_lock lock{Mutex_};
-		Value_ = value;
-		ConditionVariable_.notify_all();
+		std::scoped_lock lock{DeepBase_::Mutex_};
+		DeepBase_::Value_ = value;
+		DeepBase_::ConditionVariable_.notify_all();
 		return *this;
 	}
 	template <DecayedType ValueType, bool UseLogger> template <bool OtherUseLogger>
 		Atomic<ValueType, UseLogger>& operator=(Atomic<ValueType, OtherUseLogger>&& other);
 	{
-		std::scoped_lock lock{Mutex_};
-		Value_ = std::move(value);
-		ConditionVariable_.notify_all();
+		std::scoped_lock lock{DeepBase_::Mutex_};
+		DeepBase_::Value_ = std::move(value);
+		DeepBase_::ConditionVariable_.notify_all();
 		return *this;
 	}
 	template <DecayedType ValueType, bool UseLogger> ValueType Atomic<ValueType, UseLogger>::get() const&
 	{
-		std::scoped_lock lock{Mutex_};
-		return Value_;
+		std::scoped_lock lock{DeepBase_::Mutex_};
+		return DeepBase_::Value_;
 	}
 	template <DecayedType ValueType, bool UseLogger> ValueType Atomic<ValueType, UseLogger>::get() &&
 	{
-		std::scoped_lock lock{Mutex_};
-		return std::move(Value_);
+		std::scoped_lock lock{DeepBase_::Mutex_};
+		return std::move(DeepBase_::Value_);
 	}
 	template <DecayedType ValueType, bool UseLogger> Atomic<ValueType, UseLogger>::operator ValueType() const&
 		{return get();}
@@ -177,23 +182,24 @@ namespace mirism
 
 	template <DecayedType ValueType, bool UseLogger> template <bool ReturnFunctionResult>
 		auto Atomic<ValueType, UseLogger>::apply(auto&& function) const&
-		-> ApplyReturnType_<decltype(function), decltype(*this), ReturnFunctionResult>
-		requires ApplyConstraint_<decltype(function), decltype(*this)>
+		-> DeepBase_::template ApplyReturnType_<decltype(function), decltype(*this), ReturnFunctionResult>
+		requires DeepBase_::template ApplyConstraint_<decltype(function), decltype(*this)>
 		{return apply_<ReturnFunctionResult>(*this, std::forward<decltype(function)>(function));}
 	template <DecayedType ValueType, bool UseLogger> template <bool ReturnFunctionResult>
 		auto Atomic<ValueType, UseLogger>::apply(auto&& function) &
-		-> ApplyReturnType_<decltype(function), decltype(*this), ReturnFunctionResult>
-		requires ApplyConstraint_<decltype(function), decltype(*this)>
+		-> DeepBase_::template ApplyReturnType_<decltype(function), decltype(*this), ReturnFunctionResult>
+		requires DeepBase_::template ApplyConstraint_<decltype(function), decltype(*this)>
 		{return apply_<ReturnFunctionResult>(*this, std::forward<decltype(function)>(function));}
 	template <DecayedType ValueType, bool UseLogger> template <bool ReturnFunctionResult>
 		auto Atomic<ValueType, UseLogger>::apply(auto&& function) &&
-		-> ApplyReturnType_<decltype(function), decltype(*this), ReturnFunctionResult>
-		requires ApplyConstraint_<decltype(function), decltype(*this)>
+		-> DeepBase_::template ApplyReturnType_<decltype(function), decltype(*this), ReturnFunctionResult>
+		requires DeepBase_::template ApplyConstraint_<decltype(function), decltype(*this)>
 		{return apply_<ReturnFunctionResult>(std::move(*this), std::forward<decltype(function)>(function));}
 	template <DecayedType ValueType, bool UseLogger> template <bool ReturnFunctionResult>
 		auto Atomic<ValueType, UseLogger>::apply(auto&& function, auto&& condition_function) const&
-		-> ApplyReturnType_<decltype(function), decltype(*this), ReturnFunctionResult, decltype(condition_function)>
-		requires ApplyConstraint_<decltype(function), decltype(*this), decltype(condition_function)>
+		-> DeepBase_::template ApplyReturnType_
+			<decltype(function), decltype(*this), ReturnFunctionResult, decltype(condition_function)>
+		requires DeepBase_::template ApplyConstraint_<decltype(function), decltype(*this), decltype(condition_function)>
 	{
 		return apply_<ReturnFunctionResult>
 		(
@@ -203,8 +209,9 @@ namespace mirism
 	}
 	template <DecayedType ValueType, bool UseLogger> template <bool ReturnFunctionResult>
 		auto Atomic<ValueType, UseLogger>::apply(auto&& function, auto&& condition_function) &
-		-> ApplyReturnType_<decltype(function), decltype(*this), ReturnFunctionResult, decltype(condition_function)>
-		requires ApplyConstraint_<decltype(function), decltype(*this), decltype(condition_function)>
+		-> DeepBase_::template ApplyReturnType_
+			<decltype(function), decltype(*this), ReturnFunctionResult, decltype(condition_function)>
+		requires DeepBase_::template ApplyConstraint_<decltype(function), decltype(*this), decltype(condition_function)>
 	{
 		return apply_<ReturnFunctionResult>
 		(
@@ -214,8 +221,9 @@ namespace mirism
 	}
 	template <DecayedType ValueType, bool UseLogger> template <bool ReturnFunctionResult>
 		auto Atomic<ValueType, UseLogger>::apply(auto&& function, auto&& condition_function) &&
-		-> ApplyReturnType_<decltype(function), decltype(*this), ReturnFunctionResult, decltype(condition_function)>
-		requires ApplyConstraint_<decltype(function), decltype(*this), decltype(condition_function)>
+		-> DeepBase_::template ApplyReturnType_
+			<decltype(function), decltype(*this), ReturnFunctionResult, decltype(condition_function)>
+		requires DeepBase_::template ApplyConstraint_<decltype(function), decltype(*this), decltype(condition_function)>
 	{
 		return apply_<ReturnFunctionResult>
 		(
@@ -225,11 +233,11 @@ namespace mirism
 	}
 	template <DecayedType ValueType, bool UseLogger> template <bool ReturnFunctionResult, bool Nothrow>
 		auto Atomic<ValueType, UseLogger>::apply(auto&& function, auto&& condition_function, auto timeout) const&
-		-> ApplyReturnType_
+		-> DeepBase_::template ApplyReturnType_
 		<
 			decltype(function), decltype(*this), ReturnFunctionResult,
 			decltype(condition_function), decltype(timeout), Nothrow
-		> requires ApplyConstraint_
+		> requires DeepBase_::template ApplyConstraint_
 			<decltype(function), decltype(*this), decltype(condition_function), decltype(timeout)>
 	{
 		return apply_<ReturnFunctionResult, Nothrow>
@@ -240,11 +248,11 @@ namespace mirism
 	}
 	template <DecayedType ValueType, bool UseLogger> template <bool ReturnFunctionResult, bool Nothrow>
 		auto Atomic<ValueType, UseLogger>::apply(auto&& function, auto&& condition_function, auto timeout) &
-		-> ApplyReturnType_
+		-> DeepBase_::template ApplyReturnType_
 		<
 			decltype(function), decltype(*this), ReturnFunctionResult,
 			decltype(condition_function), decltype(timeout), Nothrow
-		> requires ApplyConstraint_
+		> requires DeepBase_::template ApplyConstraint_
 			<decltype(function), decltype(*this), decltype(condition_function), decltype(timeout)>
 	{
 		return apply_<ReturnFunctionResult, Nothrow>
@@ -255,11 +263,11 @@ namespace mirism
 	}
 	template <DecayedType ValueType, bool UseLogger> template <bool ReturnFunctionResult, bool Nothrow>
 		auto Atomic<ValueType, UseLogger>::apply(auto&& function, auto&& condition_function, auto timeout) &&
-		-> ApplyReturnType_
+		-> DeepBase_::template ApplyReturnType_
 		<
 			decltype(function), decltype(*this), ReturnFunctionResult,
 			decltype(condition_function), decltype(timeout), Nothrow
-		> requires ApplyConstraint_
+		> requires DeepBase_::template ApplyConstraint_
 			<decltype(function), decltype(*this), decltype(condition_function), decltype(timeout)>
 	{
 		return apply_<ReturnFunctionResult, Nothrow>
@@ -271,33 +279,36 @@ namespace mirism
 
 	template <DecayedType ValueType, bool UseLogger>
 		auto Atomic<ValueType, UseLogger>::wait(auto&& condition_function) const&
-		-> WaitReturnType_<decltype(*this), decltype(condition_function)>
-		requires WaitConstraint_<decltype(condition_function)>
+		-> DeepBase_::template WaitReturnType_<decltype(*this), decltype(condition_function)>
+		requires DeepBase_::template WaitConstraint_<decltype(condition_function)>
 		{return wait_(*this, std::forward<decltype(condition_function)>(condition_function));}
 	template <DecayedType ValueType, bool UseLogger>
 		auto Atomic<ValueType, UseLogger>::wait(auto&& condition_function) &
-		-> WaitReturnType_<decltype(*this), decltype(condition_function)>
-		requires WaitConstraint_<decltype(condition_function)>
+		-> DeepBase_::template WaitReturnType_<decltype(*this), decltype(condition_function)>
+		requires DeepBase_::template WaitConstraint_<decltype(condition_function)>
 		{return wait_(*this, std::forward<decltype(condition_function)>(condition_function));}
 	template <DecayedType ValueType, bool UseLogger>
 		auto Atomic<ValueType, UseLogger>::wait(auto&& condition_function) &&
-		-> WaitReturnType_<decltype(*this), decltype(condition_function)>
-		requires WaitConstraint_<decltype(condition_function)>
+		-> DeepBase_::template WaitReturnType_<decltype(*this), decltype(condition_function)>
+		requires DeepBase_::template WaitConstraint_<decltype(condition_function)>
 		{return wait_(std::move(*this), std::forward<decltype(condition_function)>(condition_function));}
 	template <DecayedType ValueType, bool UseLogger> template <bool Nothrow>
 		auto Atomic<ValueType, UseLogger>::wait(auto&& condition_function, auto timeout) const&
-		-> WaitReturnType_<decltype(*this), decltype(condition_function), decltype(timeout), Nothrow>
-		requires WaitConstraint_<decltype(condition_function), decltype(timeout)>
+		-> DeepBase_::template WaitReturnType_
+			<decltype(*this), decltype(condition_function), decltype(timeout), Nothrow>
+		requires DeepBase_::template WaitConstraint_<decltype(condition_function), decltype(timeout)>
 		{return wait_<Nothrow>(*this, std::forward<decltype(condition_function)>(condition_function), timeout);}
 	template <DecayedType ValueType, bool UseLogger> template <bool Nothrow>
 		auto Atomic<ValueType, UseLogger>::wait(auto&& condition_function, auto timeout) &
-		-> WaitReturnType_<decltype(*this), decltype(condition_function), decltype(timeout), Nothrow>
-		requires WaitConstraint_<decltype(condition_function), decltype(timeout)>
+		-> DeepBase_::template WaitReturnType_
+			<decltype(*this), decltype(condition_function), decltype(timeout), Nothrow>
+		requires DeepBase_::template WaitConstraint_<decltype(condition_function), decltype(timeout)>
 		{return wait_<Nothrow>(*this, std::forward<decltype(condition_function)>(condition_function), timeout);}
 	template <DecayedType ValueType, bool UseLogger> template <bool Nothrow>
 		auto Atomic<ValueType, UseLogger>::wait(auto&& condition_function, auto timeout) &&
-		-> WaitReturnType_<decltype(*this), decltype(condition_function), decltype(timeout), Nothrow>
-		requires WaitConstraint_<decltype(condition_function), decltype(timeout)>
+		-> DeepBase_::template WaitReturnType_
+			<decltype(*this), decltype(condition_function), decltype(timeout), Nothrow>
+		requires DeepBase_::template WaitConstraint_<decltype(condition_function), decltype(timeout)>
 	{
 		return wait_<Nothrow>
 			(std::move(*this), std::forward<decltype(condition_function)>(condition_function), timeout);
@@ -329,30 +340,30 @@ namespace mirism
 		{return Value_->Value_;}
 
 	template <DecayedType ValueType, bool UseLogger> auto Atomic<ValueType, UseLogger>::lock() const&
-		-> LockReturnType_<decltype(*this)> requires LockConstraint_<>
+		-> DeepBase_::template LockReturnType_<decltype(*this)> requires DeepBase_::template LockConstraint_<>
 		{return lock_(*this);}
 	template <DecayedType ValueType, bool UseLogger> auto Atomic<ValueType, UseLogger>::lock() &
-		-> LockReturnType_<decltype(*this)> requires LockConstraint_<>
+		-> DeepBase_::template LockReturnType_<decltype(*this)> requires DeepBase_::template LockConstraint_<>
 		{return lock_(*this);}
 	template <DecayedType ValueType, bool UseLogger>
 		auto Atomic<ValueType, UseLogger>::lock(auto&& condition_function) const&
-		-> LockReturnType_<decltype(*this), decltype(condition_function)>
-		requires LockConstraint_<decltype(condition_function)>
+		-> DeepBase_::template LockReturnType_<decltype(*this), decltype(condition_function)>
+		requires DeepBase_::template LockConstraint_<decltype(condition_function)>
 		{return lock_(*this, condition_function);}
 	template <DecayedType ValueType, bool UseLogger>
 		auto Atomic<ValueType, UseLogger>::lock(auto&& condition_function) &
-		-> LockReturnType_<decltype(*this), decltype(condition_function)>
-		requires LockConstraint_<decltype(condition_function)>
+		-> DeepBase_::template LockReturnType_<decltype(*this), decltype(condition_function)>
+		requires DeepBase_::template LockConstraint_<decltype(condition_function)>
 		{return lock_(*this, condition_function);}
 	template <DecayedType ValueType, bool UseLogger> template <bool Nothrow>
 		auto Atomic<ValueType, UseLogger>::lock(auto&& condition_function, auto timeout) const&
-		-> LockReturnType_<decltype(*this), decltype(timeout), Nothrow>
-		requires LockConstraint_<decltype(condition_function), decltype(timeout)>
+		-> DeepBase_::template LockReturnType_<decltype(*this), decltype(timeout), Nothrow>
+		requires DeepBase_::template LockConstraint_<decltype(condition_function), decltype(timeout)>
 		{return lock_<Nothrow>(*this, condition_function, timeout);}
 	template <DecayedType ValueType, bool UseLogger> template <bool Nothrow>
 		auto Atomic<ValueType, UseLogger>::lock(auto&& condition_function, auto timeout) &
-		-> LockReturnType_<decltype(*this), decltype(timeout), Nothrow>
-		requires LockConstraint_<decltype(condition_function), decltype(timeout)>
+		-> DeepBase_::template LockReturnType_<decltype(*this), decltype(timeout), Nothrow>
+		requires DeepBase_::template LockConstraint_<decltype(condition_function), decltype(timeout)>
 		{return lock_<Nothrow>(*this, condition_function, timeout);}
 }
 
@@ -369,9 +380,9 @@ namespace mirism::detail_
 		template <bool ReturnFunctionResult, typename ConditionFunction, typename Duration, bool Nothrow>
 		auto AtomicBase<ValueType, true>::apply_
 			(auto&& atomic, auto&& function, ConditionFunction&& condition_function, Duration timeout)
-		-> ApplyReturnType_
+		-> DeepBase_::template ApplyReturnType_
 			<decltype(function), decltype(atomic), ReturnFunctionResult, ConditionFunction, Duration, Nothrow>
-		requires ApplyConstraint_<decltype(function), decltype(atomic), ConditionFunction, Duration>
+		requires DeepBase_::template ApplyConstraint_<decltype(function), decltype(atomic), ConditionFunction, Duration>
 	{
 		Logger::Guard log;
 		std::unique_lock lock{atomic.Mutex_};
@@ -418,8 +429,8 @@ namespace mirism::detail_
 
 	template <DecayedType ValueType> template <bool Nothrow, typename Duration>
 		auto AtomicBase<ValueType, true>::wait_(auto&& atomic, auto&& condition_function, Duration timeout)
-		-> WaitReturnType_<decltype(atomic), decltype(condition_function), Duration, Nothrow>
-		requires WaitConstraint_<decltype(condition_function), Duration>
+		-> DeepBase_::template WaitReturnType_<decltype(atomic), decltype(condition_function), Duration, Nothrow>
+		requires DeepBase_::template WaitConstraint_<decltype(condition_function), Duration>
 	{
 		Logger::Guard log;
 		std::unique_lock lock{atomic.Mutex_};
@@ -449,7 +460,8 @@ namespace mirism::detail_
 
 	template <DecayedType ValueType> template <bool Nothrow, typename ConditionFunction, typename Duration>
 		auto AtomicBase<ValueType, true>::lock_(auto&& atomic, ConditionFunction&& condition_function, Duration timeout)
-		-> LockReturnType_<decltype(atomic), Duration, Nothrow> requires LockConstraint_<ConditionFunction, Duration>
+		-> DeepBase_::template LockReturnType_<decltype(atomic), Duration, Nothrow>
+		requires DeepBase_::template LockConstraint_<ConditionFunction, Duration>
 	{
 		Logger::Guard log;
 		if constexpr (std::is_null_pointer_v<ConditionFunction>)

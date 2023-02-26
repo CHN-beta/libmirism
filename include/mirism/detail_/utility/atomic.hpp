@@ -23,6 +23,10 @@ namespace mirism
 			protected: mutable std::condition_variable_any ConditionVariable_;
 			protected: ValueType Value_;
 
+			AtomicBase() = default;
+			AtomicBase(const ValueType& value);
+			AtomicBase(ValueType&& value);
+
 			public: class TimeoutException : public std::exception
 			{
 				protected: std::string Message_;
@@ -33,7 +37,11 @@ namespace mirism
 			// Apply a function to stored value.
 			// Wait for some time (if provided) until condition funciton returns true (if provided)
 			// before applying the function.
-			protected: template <typename Function, typename Atomic, typename ConditionFunction, typename Duration>
+			protected: template
+				<
+					typename Function, typename Atomic,
+					typename ConditionFunction = std::nullptr_t, typename Duration = std::nullptr_t
+				>
 				constexpr static bool ApplyConstraint_ =
 				(
 					std::invocable<Function, MoveQualifiersType<Atomic, ValueType>>
@@ -44,43 +52,47 @@ namespace mirism
 					)
 				);
 			protected: template
-			<
-				typename Function, typename Atomic, bool ReturnFunctionResult,
-				typename ConditionFunction, typename Duration, bool Nothrow
-			> using ApplyReturnType_ = std::conditional_t
 				<
-					Nothrow,
-					std::conditional_t
+					typename Function, typename Atomic, bool ReturnFunctionResult,
+					typename ConditionFunction = std::nullptr_t, typename Duration = std::nullptr_t,
+					bool Nothrow = false
+				> using ApplyReturnType_ = std::conditional_t
 					<
-						ReturnFunctionResult && !std::is_void_v<std::invoke_result<Function, ValueType>>,
-						std::optional<std::remove_cvref_t<FallbackIfNoTypeDeclaredType<std::invoke_result
-							<Function, MoveQualifiersType<Atomic, ValueType>, int>>>>,
-						bool
-					>,
-					std::conditional_t
-					<
-						ReturnFunctionResult,
-						std::invoke_result_t<Function, MoveQualifiersType<Atomic, ValueType>>,
-						Atomic&&
-					>
-				>;
+						Nothrow,
+						std::conditional_t
+						<
+							ReturnFunctionResult && !std::is_void_v<std::invoke_result<Function, ValueType>>,
+							std::optional<std::remove_cvref_t<FallbackIfNoTypeDeclaredType<std::invoke_result
+								<Function, MoveQualifiersType<Atomic, ValueType>, int>>>>,
+							bool
+						>,
+						std::conditional_t
+						<
+							ReturnFunctionResult,
+							std::invoke_result_t<Function, MoveQualifiersType<Atomic, ValueType>>,
+							Atomic&&
+						>
+					>;
 			protected: template
-			<
-				bool ReturnFunctionResult,
-				typename ConditionFunction = std::nullptr_t, typename Duration = std::nullptr_t, bool Nothrow = false
-			> static auto apply_
-			(
-				auto&& atomic, auto&& function,
-				ConditionFunction&& condition_function = nullptr, Duration timeout = nullptr
-			) -> ApplyReturnType_
+				<
+					bool ReturnFunctionResult,
+					typename ConditionFunction = std::nullptr_t, typename Duration = std::nullptr_t,
+					bool Nothrow = false
+				> static auto apply_
+				(
+					auto&& atomic, auto&& function,
+					ConditionFunction&& condition_function = nullptr, Duration timeout = nullptr
+				) -> ApplyReturnType_
 					<decltype(function), decltype(atomic), ReturnFunctionResult, ConditionFunction, Duration, Nothrow>
-				requires ApplyConstraint_<decltype(function), decltype(atomic), ConditionFunction, Duration>;
+					requires ApplyConstraint_<decltype(function), decltype(atomic), ConditionFunction, Duration>;
 
 			// Wait until condition funciton returns true, with an optional timeout
-			protected: template <typename ConditionFunction, typename Duration> constexpr static bool WaitConstraint_
+			protected: template <typename ConditionFunction, typename Duration = std::nullptr_t>
+				constexpr static bool WaitConstraint_
 				= (InvocableWithResult<ConditionFunction, bool, const ValueType&>
 					&& (std::is_null_pointer_v<Duration> || SpecializationOf<Duration, std::chrono::duration>));
-			protected: template <typename Atomic, typename ConditionFunction, typename Duration, bool Nothrow>
+			protected: template
+				<typename Atomic, typename ConditionFunction, typename Duration = std::nullptr_t, bool Nothrow = false>
 				using WaitReturnType_
 				= std::conditional_t<Nothrow && !std::is_null_pointer_v<Duration>, bool, Atomic&&>;
 			protected: template <bool Nothrow = false, typename Duration = std::nullptr_t> static auto wait_
@@ -88,13 +100,15 @@ namespace mirism
 				-> WaitReturnType_<decltype(atomic), decltype(condition_function), Duration, Nothrow>
 				requires WaitConstraint_<decltype(condition_function), Duration>;
 
-			protected: template <typename ConditionFunction, typename Duration> constexpr static bool LockConstraint_
+			protected: template <typename ConditionFunction = std::nullptr_t, typename Duration = std::nullptr_t>
+				constexpr static bool LockConstraint_
 				= std::is_null_pointer_v<ConditionFunction> ||
 					(
 						InvocableWithResult<ConditionFunction, bool, const ValueType&>
 							&& (std::is_null_pointer_v<Duration> || SpecializationOf<Duration, std::chrono::duration>)
 					);
-			protected: template <typename Atomic, typename Duration, bool Nothrow> using LockReturnType_
+			protected: template <typename Atomic, typename Duration = std::nullptr_t, bool Nothrow = false>
+				using LockReturnType_
 				= std::conditional_t
 					<
 						Nothrow && !std::is_null_pointer_v<Duration>,
@@ -139,94 +153,79 @@ namespace mirism
 		public: operator ValueType() const&;
 		public: operator ValueType() &&;
 
-		protected: template
-			<
-				typename Function, typename Atomic,
-				typename ConditionFunction = std::nullptr_t, typename Duration = std::nullptr_t
-			> constexpr static bool ApplyConstraint_
-			= detail_::AtomicBase<ValueType, false>::template ApplyConstraint_
-				<Function, Atomic, ConditionFunction, Duration>;
-		protected: template
-			<
-				typename Function, typename Atomic, bool ReturnFunctionResult,
-				typename ConditionFunction = std::nullptr_t, typename Duration = std::nullptr_t, bool Nothrow = false
-			> using ApplyReturnType_
-			= detail_::AtomicBase<ValueType, false>::template ApplyReturnType_
-				<Function, Atomic, ReturnFunctionResult, ConditionFunction, Duration, Nothrow>;
-		protected: template <typename ConditionFunction, typename Duration = std::nullptr_t>
-			constexpr static bool WaitConstraint_
-			= detail_::AtomicBase<ValueType, false>::template WaitConstraint_<ConditionFunction, Duration>;
-		protected: template
-			<typename Atomic, typename ConditionFunction, typename Duration = std::nullptr_t, bool Nothrow = false>
-			using WaitReturnType_
-			= detail_::AtomicBase<ValueType, false>::template WaitReturnType_
-				<Atomic, ConditionFunction, Duration, Nothrow>;
-		protected: template <typename ConditionFunction = std::nullptr_t, typename Duration = std::nullptr_t>
-			constexpr static bool LockConstraint_
-			= detail_::AtomicBase<ValueType, false>::template LockConstraint_<ConditionFunction, Duration>;
-		protected: template <typename Atomic, typename Duration = std::nullptr_t, bool Nothrow = false>
-			using LockReturnType_
-			= detail_::AtomicBase<ValueType, false>::template LockReturnType_<Atomic, Duration, Nothrow>;
+		protected: using DeepBase_ = detail_::AtomicBase<ValueType, false>;
 
 		public: template <bool ReturnFunctionResult = false> auto apply(auto&& function) const&
-			-> ApplyReturnType_<decltype(function), decltype(*this), ReturnFunctionResult>
-			requires ApplyConstraint_<decltype(function), decltype(*this)>;
+			-> DeepBase_::template ApplyReturnType_<decltype(function), decltype(*this), ReturnFunctionResult>
+			requires DeepBase_::template ApplyConstraint_<decltype(function), decltype(*this)>;
 		public: template <bool ReturnFunctionResult = false> auto apply(auto&& function) &
-			-> ApplyReturnType_<decltype(function), decltype(*this), ReturnFunctionResult>
-			requires ApplyConstraint_<decltype(function), decltype(*this)>;
+			-> DeepBase_::template ApplyReturnType_<decltype(function), decltype(*this), ReturnFunctionResult>
+			requires DeepBase_::template ApplyConstraint_<decltype(function), decltype(*this)>;
 		public: template <bool ReturnFunctionResult = false> auto apply(auto&& function) &&
-			-> ApplyReturnType_<decltype(function), decltype(*this), ReturnFunctionResult>
-			requires ApplyConstraint_<decltype(function), decltype(*this)>;
+			-> DeepBase_::template ApplyReturnType_<decltype(function), decltype(*this), ReturnFunctionResult>
+			requires DeepBase_::template ApplyConstraint_<decltype(function), decltype(*this)>;
 		public: template <bool ReturnFunctionResult = false>
 			auto apply(auto&& function, auto&& condition_function) const&
-			-> ApplyReturnType_<decltype(function), decltype(*this), ReturnFunctionResult, decltype(condition_function)>
-			requires ApplyConstraint_<decltype(function), decltype(*this), decltype(condition_function)>;
+			-> DeepBase_::template ApplyReturnType_
+				<decltype(function), decltype(*this), ReturnFunctionResult, decltype(condition_function)>
+			requires DeepBase_::template ApplyConstraint_
+				<decltype(function), decltype(*this), decltype(condition_function)>;
 		public: template <bool ReturnFunctionResult = false> auto apply(auto&& function, auto&& condition_function) &
-			-> ApplyReturnType_<decltype(function), decltype(*this), ReturnFunctionResult, decltype(condition_function)>
-			requires ApplyConstraint_<decltype(function), decltype(*this), decltype(condition_function)>;
+			-> DeepBase_::template ApplyReturnType_
+				<decltype(function), decltype(*this), ReturnFunctionResult, decltype(condition_function)>
+			requires DeepBase_::template ApplyConstraint_
+				<decltype(function), decltype(*this), decltype(condition_function)>;
 		public: template <bool ReturnFunctionResult = false> auto apply(auto&& function, auto&& condition_function) &&
-			-> ApplyReturnType_<decltype(function), decltype(*this), ReturnFunctionResult, decltype(condition_function)>
-			requires ApplyConstraint_<decltype(function), decltype(*this), decltype(condition_function)>;
+			-> DeepBase_::template ApplyReturnType_
+				<decltype(function), decltype(*this), ReturnFunctionResult, decltype(condition_function)>
+			requires DeepBase_::template ApplyConstraint_
+				<decltype(function), decltype(*this), decltype(condition_function)>;
 		public: template <bool ReturnFunctionResult = false, bool Nothrow = false>
-			auto apply(auto&& function, auto&& condition_function, auto timeout) const& -> ApplyReturnType_
+			auto apply(auto&& function, auto&& condition_function, auto timeout) const&
+			-> DeepBase_::template ApplyReturnType_
 			<
 				decltype(function), decltype(*this), ReturnFunctionResult,
 				decltype(condition_function), decltype(timeout), Nothrow
-			> requires ApplyConstraint_
+			> requires DeepBase_::template ApplyConstraint_
 				<decltype(function), decltype(*this), decltype(condition_function), decltype(timeout)>;
 		public: template <bool ReturnFunctionResult = false, bool Nothrow = false>
-			auto apply(auto&& function, auto&& condition_function, auto timeout) & -> ApplyReturnType_
+			auto apply(auto&& function, auto&& condition_function, auto timeout) &
+			-> DeepBase_::template ApplyReturnType_
 			<
 				decltype(function), decltype(*this), ReturnFunctionResult,
 				decltype(condition_function), decltype(timeout), Nothrow
-			> requires ApplyConstraint_
+			> requires DeepBase_::template ApplyConstraint_
 				<decltype(function), decltype(*this), decltype(condition_function), decltype(timeout)>;
 		public: template <bool ReturnFunctionResult = false, bool Nothrow = false>
-			auto apply(auto&& function, auto&& condition_function, auto timeout) && -> ApplyReturnType_
+			auto apply(auto&& function, auto&& condition_function, auto timeout) &&
+			-> DeepBase_::template ApplyReturnType_
 			<
 				decltype(function), decltype(*this), ReturnFunctionResult,
 				decltype(condition_function), decltype(timeout), Nothrow
-			> requires ApplyConstraint_
+			> requires DeepBase_::template ApplyConstraint_
 				<decltype(function), decltype(*this), decltype(condition_function), decltype(timeout)>;
 
 		public: auto wait(auto&& condition_function) const&
-			-> WaitReturnType_<decltype(*this), decltype(condition_function)>
-			requires WaitConstraint_<decltype(condition_function)>;
+			-> DeepBase_::template WaitReturnType_<decltype(*this), decltype(condition_function)>
+			requires DeepBase_::template WaitConstraint_<decltype(condition_function)>;
 		public: auto wait(auto&& condition_function) &
-			-> WaitReturnType_<decltype(*this), decltype(condition_function)>
-			requires WaitConstraint_<decltype(condition_function)>;
+			-> DeepBase_::template WaitReturnType_<decltype(*this), decltype(condition_function)>
+			requires DeepBase_::template WaitConstraint_<decltype(condition_function)>;
 		public: auto wait(auto&& condition_function) &&
-			-> WaitReturnType_<decltype(*this), decltype(condition_function)>
-			requires WaitConstraint_<decltype(condition_function)>;
+			-> DeepBase_::template WaitReturnType_<decltype(*this), decltype(condition_function)>
+			requires DeepBase_::template WaitConstraint_<decltype(condition_function)>;
 		public: template <bool Nothrow = false> auto wait(auto&& condition_function, auto timeout) const&
-			-> WaitReturnType_<decltype(*this), decltype(condition_function), decltype(timeout), Nothrow>
-			requires WaitConstraint_<decltype(condition_function), decltype(timeout)>;
+			-> DeepBase_::template WaitReturnType_
+				<decltype(*this), decltype(condition_function), decltype(timeout), Nothrow>
+			requires DeepBase_::template WaitConstraint_<decltype(condition_function), decltype(timeout)>;
 		public: template <bool Nothrow = false> auto wait(auto&& condition_function, auto timeout) &
-			-> WaitReturnType_<decltype(*this), decltype(condition_function), decltype(timeout), Nothrow>
-			requires WaitConstraint_<decltype(condition_function), decltype(timeout)>;
+			-> DeepBase_::template WaitReturnType_
+				<decltype(*this), decltype(condition_function), decltype(timeout), Nothrow>
+			requires DeepBase_::template WaitConstraint_<decltype(condition_function), decltype(timeout)>;
 		public: template <bool Nothrow = false> auto wait(auto&& condition_function, auto timeout) &&
-			-> WaitReturnType_<decltype(*this), decltype(condition_function), decltype(timeout), Nothrow>
-			requires WaitConstraint_<decltype(condition_function), decltype(timeout)>;
+			-> DeepBase_::template WaitReturnType_
+				<decltype(*this), decltype(condition_function), decltype(timeout), Nothrow>
+			requires DeepBase_::template WaitConstraint_<decltype(condition_function), decltype(timeout)>;
 
 		// Attain lock from outside when constructing, and release when destructing.
 		// For non-const variant, When destructing, ConditionVariable_.notify_all() is called.
@@ -249,22 +248,24 @@ namespace mirism
 			public: auto value() const&& = delete;
 		};
 
-		public: auto lock() const& -> LockReturnType_<decltype(*this)> requires LockConstraint_<>;
-		public: auto lock() & -> LockReturnType_<decltype(*this)> requires LockConstraint_<>;
+		public: auto lock() const& -> DeepBase_::template LockReturnType_<decltype(*this)>
+			requires DeepBase_::template LockConstraint_<>;
+		public: auto lock() & -> DeepBase_::template LockReturnType_<decltype(*this)>
+			requires DeepBase_::template LockConstraint_<>;
 		public: auto lock() const&& = delete;
 		public: auto lock(auto&& condition_function) const&
-			-> LockReturnType_<decltype(*this), decltype(condition_function)>
-			requires LockConstraint_<decltype(condition_function)>;
+			-> DeepBase_::template LockReturnType_<decltype(*this), decltype(condition_function)>
+			requires DeepBase_::template LockConstraint_<decltype(condition_function)>;
 		public: auto lock(auto&& condition_function) &
-			-> LockReturnType_<decltype(*this), decltype(condition_function)>
-			requires LockConstraint_<decltype(condition_function)>;
+			-> DeepBase_::template LockReturnType_<decltype(*this), decltype(condition_function)>
+			requires DeepBase_::template LockConstraint_<decltype(condition_function)>;
 		public: auto lock(auto&& condition_function) const&& = delete;
 		public: template <bool Nothrow = false> auto lock(auto&& condition_function, auto timeout) const&
-			-> LockReturnType_<decltype(*this), decltype(timeout), Nothrow>
-			requires LockConstraint_<decltype(condition_function), decltype(timeout)>;
+			-> DeepBase_::template LockReturnType_<decltype(*this), decltype(timeout), Nothrow>
+			requires DeepBase_::template LockConstraint_<decltype(condition_function), decltype(timeout)>;
 		public: template <bool Nothrow = false> auto lock(auto&& condition_function, auto timeout) &
-			-> LockReturnType_<decltype(*this), decltype(timeout), Nothrow>
-			requires LockConstraint_<decltype(condition_function), decltype(timeout)>;
+			-> DeepBase_::template LockReturnType_<decltype(*this), decltype(timeout), Nothrow>
+			requires DeepBase_::template LockConstraint_<decltype(condition_function), decltype(timeout)>;
 		public: template <bool Nothrow = false> auto lock(auto&& condition_function, auto timeout) const&& = delete;
 	};
 }
@@ -281,6 +282,8 @@ namespace mirism::detail_
 	template <DecayedType ValueType> class AtomicBase<ValueType, true>
 		: public Logger::ObjectMonitor<Atomic<ValueType, true>>, protected AtomicBase<ValueType, false>
 	{
+		using DeepBase_ = AtomicBase<ValueType, false>;
+		using DeepBase_::AtomicBase;
 		public: class TimeoutException : public Logger::Exception<TimeoutException>
 		{
 			using Logger::Exception<TimeoutException>::Exception;
@@ -294,23 +297,22 @@ namespace mirism::detail_
 		(
 			auto&& atomic, auto&& function,
 			ConditionFunction&& condition_function = nullptr, Duration timeout = nullptr
-		) -> AtomicBase<ValueType, false>::template ApplyReturnType_
+		) -> DeepBase_::template ApplyReturnType_
 				<decltype(function), decltype(atomic), ReturnFunctionResult, ConditionFunction, Duration, Nothrow>
-			requires AtomicBase<ValueType, false>::template ApplyConstraint_
+			requires DeepBase_::template ApplyConstraint_
 				<decltype(function), decltype(atomic), ConditionFunction, Duration>;
 
 		protected: template <bool Nothrow = false, typename Duration = std::nullptr_t> static auto wait_
 			(auto&& atomic, auto&& condition_function, Duration timeout = nullptr)
-			-> AtomicBase<ValueType, false>::template WaitReturnType_
-				<decltype(atomic), decltype(condition_function), Duration, Nothrow>
-			requires AtomicBase<ValueType, false>::template WaitConstraint_<decltype(condition_function), Duration>;
+			-> DeepBase_::template WaitReturnType_<decltype(atomic), decltype(condition_function), Duration, Nothrow>
+			requires DeepBase_::template WaitConstraint_<decltype(condition_function), Duration>;
 
 		protected: template
 			<bool Nothrow = false, typename ConditionFunction = std::nullptr_t, typename Duration = std::nullptr_t>
 			static auto lock_
 			(auto&& atomic, ConditionFunction&& condition_function = nullptr, Duration timeout = nullptr)
-			-> AtomicBase<ValueType, false>::template LockReturnType_<decltype(atomic), Duration, Nothrow>
-			requires AtomicBase<ValueType, false>::template LockConstraint_<ConditionFunction, Duration>;
+			-> DeepBase_::template LockReturnType_<decltype(atomic), Duration, Nothrow>
+			requires DeepBase_::template LockConstraint_<ConditionFunction, Duration>;
 	};
 }
 # endif
