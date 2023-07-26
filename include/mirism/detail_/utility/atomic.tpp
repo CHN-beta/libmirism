@@ -129,10 +129,10 @@ namespace mirism
 		: detail_::AtomicBase<ValueType, UseLogger>{std::move(value)} {}
 	template <DecayedType ValueType, bool UseLogger> template <bool OtherUseLogger>
 		Atomic<ValueType, UseLogger>::Atomic(const Atomic<ValueType, OtherUseLogger>& other)
-		: AtomicBase<ValueType, UseLogger>{other} {}
+		: detail_::AtomicBase<ValueType, UseLogger>{other} {}
 	template <DecayedType ValueType, bool UseLogger> template <bool OtherUseLogger>
 		Atomic<ValueType, UseLogger>::Atomic(Atomic<ValueType, OtherUseLogger>&& other)
-		: AtomicBase<ValueType, UseLogger>{std::move(other)} {}
+		: detail_::AtomicBase<ValueType, UseLogger>{std::move(other)} {}
 	template <DecayedType ValueType, bool UseLogger>
 		Atomic<ValueType, UseLogger>& Atomic<ValueType, UseLogger>::operator=(const ValueType& value)
 	{
@@ -150,7 +150,7 @@ namespace mirism
 		return *this;
 	}
 	template <DecayedType ValueType, bool UseLogger> template <bool OtherUseLogger>
-		Atomic<ValueType, UseLogger>& operator=(const Atomic<ValueType, OtherUseLogger>& other);
+		Atomic<ValueType, UseLogger>& operator=(const Atomic<ValueType, OtherUseLogger>& other)
 	{
 		std::scoped_lock lock{DeepBase_::Mutex_};
 		DeepBase_::Value_ = value;
@@ -158,7 +158,7 @@ namespace mirism
 		return *this;
 	}
 	template <DecayedType ValueType, bool UseLogger> template <bool OtherUseLogger>
-		Atomic<ValueType, UseLogger>& operator=(Atomic<ValueType, OtherUseLogger>&& other);
+		Atomic<ValueType, UseLogger>& operator=(Atomic<ValueType, OtherUseLogger>&& other)
 	{
 		std::scoped_lock lock{DeepBase_::Mutex_};
 		DeepBase_::Value_ = std::move(value);
